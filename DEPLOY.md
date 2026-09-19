@@ -120,6 +120,33 @@ deliberate — the alternative is guessing a price for real money.
 Crediting is idempotent on `(chain, tx_hash)`. A re-scan, an overlapping poll
 or a restart cannot double-credit.
 
+### Xlaunch treasury addresses
+
+Set these in the dashboard under *Billing* on first run. They are the company
+revenue wallet, read from the live production gateway on 19 Sep 2026 and
+matching the `revenue` alias in the owner's Sui client:
+
+| Setting | Value |
+|---|---|
+| Sui treasury | `0x8539945639191e1749b60c1cd56ada185569b69b1ca7a9e5d6c7915d60c06084` |
+| EVM treasury (USDC) | `0xeb67af9e11c581690b056b278538e7aecc655017` |
+| EVM chain | `base` |
+
+**These are the same addresses another Northlatch gateway receives on**, by the
+owner's decision. Two consequences follow from matching by sender, and whoever
+operates this instance should know both:
+
+- Each gateway sees every transfer into the shared address. A payment from a
+  wallet registered only on the other gateway is recorded here as `unmatched`.
+  That is expected, not lost money: check the other gateway before chasing it.
+- A customer who registers the same sending wallet on both gateways is
+  credited on both for one payment. `(chain, tx_hash)` makes crediting
+  idempotent inside one gateway, not across two.
+
+One EVM chain is watched at a time. Accepting USDC on Base and on Ethereum
+together needs the watcher to poll both; until it does, a transfer on the
+chain that is not selected is not seen.
+
 ---
 
 ## 6. What limits a customer
