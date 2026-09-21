@@ -67,7 +67,7 @@ export interface Config {
   cspUpgradeInsecureRequests: boolean | undefined;
   /**
    * The address customers reach this gateway at, from PUBLIC_URL (for example
-   * https://api.weir.social). The dashboard prints it as the API base and the
+   * https://gateway.xlaunch.work). The dashboard prints it as the API base and the
    * docs and CLI default to it; unset, the dashboard falls back to the page
    * origin, which is only right when the browser and the API share a host.
    * A value that is not an http(s) URL refuses to start rather than being
@@ -112,7 +112,7 @@ function parsePublicUrl(): string | null {
   try {
     parsed = new URL(raw.trim());
   } catch {
-    throw new Error(`PUBLIC_URL is not a URL: '${raw}' (expected e.g. https://api.weir.social)`);
+    throw new Error(`PUBLIC_URL is not a URL: '${raw}' (expected e.g. https://gateway.xlaunch.work)`);
   }
   if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
     throw new Error(`PUBLIC_URL must be http or https, got '${raw}'`);

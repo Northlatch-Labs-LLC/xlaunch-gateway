@@ -5,7 +5,7 @@ generators read the models your server is actually serving and write the
 config file each tool expects.
 
 ```bash
-npx xlaunch-gateway setup-claude --url https://api.weir.social --api-key <your-key>
+npx xlaunch-gateway setup-claude --url https://gateway.xlaunch.work --api-key <your-key>
 ```
 
 No install step, no account. The unified API key comes from your Xlaunch Gateway
@@ -46,7 +46,7 @@ keys already in them are kept.
 
 | Flag | Meaning |
 | --- | --- |
-| `--url URL` | Gateway base URL (default `https://api.weir.social`; `XLAUNCH_GATEWAY_URL` overrides) |
+| `--url URL` | Gateway base URL (default `https://gateway.xlaunch.work`; `XLAUNCH_GATEWAY_URL` overrides) |
 | `--api-key KEY` | Unified API key |
 | `--profile NAME` | Name the generated profile/provider entry |
 | `--model ID` | Pin a specific model instead of the catalog default |

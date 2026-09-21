@@ -58,7 +58,7 @@ important ones:
 | --- | --- |
 | `ENCRYPTION_KEY` | 64-char hex key encrypting provider keys at rest. Required in production; auto-generated to `.encryption-key` otherwise. |
 | `PORT`, `HOST` | Listen port (default 3001) and interface (default `::`). |
-| `PUBLIC_URL` | The address customers reach the gateway at, e.g. `https://api.weir.social`. The dashboard prints it as the API base. Unset, the dashboard prints its own origin, which is only right when the browser and the API share a host. Must be an http(s) URL or the server refuses to start. |
+| `PUBLIC_URL` | The address customers reach the gateway at, e.g. `https://gateway.xlaunch.work`. The dashboard prints it as the API base. Unset, the dashboard prints its own origin, which is only right when the browser and the API share a host. Must be an http(s) URL or the server refuses to start. |
 | `XLAUNCH_GATEWAY_DB_PATH` | SQLite file location (default `server/data/xlaunch-gateway.db`). |
 | `XLAUNCH_GATEWAY_DB_DIR_HARDENING` | Tighten permissions on the data directory. |
 | `XLAUNCH_GATEWAY_DB_BACKUP_PATH` / `_URL` / `_TOKEN` / `_KEY` / `_INTERVAL_MS` | Encrypted DB backup target (local file or HTTP), restored on boot when the DB is missing. |
@@ -79,12 +79,12 @@ The `xlaunch-gateway` CLI (workspace `cli/`) writes agent configs against the
 live catalog. To connect the Xlaunch harness:
 
 ```bash
-npx xlaunch-gateway setup-xlaunch --url https://api.weir.social --api-key <unified-key>
+npx xlaunch-gateway setup-xlaunch --url https://gateway.xlaunch.work --api-key <unified-key>
 ```
 
 This merges an `xlaunch` provider route into `~/.xlaunch/settings.yaml`
 (honouring `$XLAUNCH_HOME`) under `llm-pi-ai.providers` — `api:
-openai-completions`, `baseURL: https://api.weir.social/v1`, `apiKeyEnv:
+openai-completions`, `baseURL: https://gateway.xlaunch.work/v1`, `apiKeyEnv:
 XLAUNCH_API_KEY`, one model entry per catalog model — and stores the key as
 `XLAUNCH_API_KEY` in `~/.xlaunch/.credentials.yaml`. Existing keys in both files
 are preserved. `--profile NAME` adds a second route instead of replacing the

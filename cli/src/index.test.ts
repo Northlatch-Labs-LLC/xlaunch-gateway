@@ -64,7 +64,7 @@ describe('CLI arguments and launchers', () => {
     { id: 'reasoning-model', available: true, context_window: 262144 },
   ];
   const baseOptions = {
-    url: 'https://api.weir.social',
+    url: 'https://gateway.xlaunch.work',
     profile: 'default',
     dryRun: false,
   };
@@ -90,7 +90,7 @@ describe('CLI arguments and launchers', () => {
     const fallback = claudeLaunchEnv(baseOptions, 'unified-key', models, {}, '/home/tester');
     expect(fallback.ANTHROPIC_MODEL).toBe('fast-coder');
     expect(fallback.ANTHROPIC_AUTH_TOKEN).toBe('unified-key');
-    expect(fallback.ANTHROPIC_BASE_URL).toBe('https://api.weir.social');
+    expect(fallback.ANTHROPIC_BASE_URL).toBe('https://gateway.xlaunch.work');
   });
 
   it('never uses the profile name as a model id', () => {

@@ -411,8 +411,8 @@ function App() {
                 their own account against /customer-api and must never need an
                 operator login to reach it. */}
             {/* On the customer's own hostname the portal IS the site, at the
-                root. It used to live at /portal there too, so a buyer arriving
-                at portal.weir.social got the operator dashboard — which cannot
+                root. Served only at /portal, a buyer arriving at the bare
+                customer hostname would get the operator dashboard — which cannot
                 reach /api on a public host, correctly, and so reported that it
                 could not reach the server. A customer should never meet that
                 screen, and should never be told to add a path to the address

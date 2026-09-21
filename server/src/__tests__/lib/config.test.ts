@@ -103,16 +103,16 @@ describe('PUBLIC_URL', () => {
   });
 
   it('keeps an https address and drops trailing slashes', () => {
-    process.env.PUBLIC_URL = 'https://api.weir.social/';
-    expect(loadConfig().publicUrl).toBe('https://api.weir.social');
+    process.env.PUBLIC_URL = 'https://gateway.xlaunch.work/';
+    expect(loadConfig().publicUrl).toBe('https://gateway.xlaunch.work');
   });
 
   it('refuses to start on a value that is not an http(s) URL, naming the variable', () => {
-    process.env.PUBLIC_URL = 'api.weir.social';
+    process.env.PUBLIC_URL = 'gateway.xlaunch.work';
     expect(() => loadConfig()).toThrow(/PUBLIC_URL/);
-    process.env.PUBLIC_URL = 'ftp://api.weir.social';
+    process.env.PUBLIC_URL = 'ftp://gateway.xlaunch.work';
     expect(() => loadConfig()).toThrow(/PUBLIC_URL/);
-    process.env.PUBLIC_URL = 'https://api.weir.social/?x=1';
+    process.env.PUBLIC_URL = 'https://gateway.xlaunch.work/?x=1';
     expect(() => loadConfig()).toThrow(/PUBLIC_URL/);
   });
 });

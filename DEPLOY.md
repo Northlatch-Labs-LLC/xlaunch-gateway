@@ -33,7 +33,7 @@ Copy `.env.example` to `.env` and set at minimum:
 ```
 ENCRYPTION_KEY=<64 hex characters>
 PORT=3001
-PUBLIC_URL=https://api.weir.social
+PUBLIC_URL=https://gateway.xlaunch.work
 HOST_BIND=127.0.0.1
 TRUST_PROXY=1
 DASHBOARD_ORIGINS=https://gateway.yourdomain.com

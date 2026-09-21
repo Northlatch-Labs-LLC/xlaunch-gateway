@@ -56,7 +56,7 @@ function parseTimeout(value: string): number {
 
 export function parseArgs(argv: string[]): { command?: string; options: CliOptions } {
   const options: CliOptions = {
-    url: process.env.XLAUNCH_GATEWAY_URL || 'https://api.weir.social',
+    url: process.env.XLAUNCH_GATEWAY_URL || 'https://gateway.xlaunch.work',
     apiKey: process.env.XLAUNCH_GATEWAY_API_KEY,
     profile: 'default',
     dryRun: false,
