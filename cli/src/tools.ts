@@ -645,11 +645,11 @@ const metadata = [
   ['roo', 'Roo Code', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-roo', 'https://docs.roocode.com', roo],
   ['kilo', 'Kilo Code', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-kilo', 'https://kilocode.ai/docs', kilo],
   ['crush', 'Crush', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-crush', 'https://github.com/charmbracelet/crush', crush],
-  ['xlaunch', 'Xlaunch', 'agent', 'file', 'OpenAI Chat', '/v1', 'setup-xlaunch', 'https://github.com/xlaunch/xlaunch', xlaunch],
+  ['xlaunch', 'Xlaunch', 'agent', 'file', 'OpenAI Chat', '/v1', 'setup-xlaunch', 'https://github.com/Northlatch-Labs-LLC/xlaunch-agent', xlaunch],
   ['mimo', 'MiMo Code', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-mimo', 'https://mimo.xiaomi.com/mimocode', mimo],
   ['atomcode', 'AtomCode', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-atomcode', 'https://atomcode.atomgit.com/docs/en/', atomcode],
   ['cursor', 'Cursor', 'code', 'guide', 'OpenAI Chat', '/v1', 'setup-cursor', 'https://docs.cursor.com', cursor],
-  ['generic', 'Generic OpenAI client', 'agent', 'guide', 'OpenAI Chat', '/v1', 'setup-generic', 'https://github.com/xlaunch/xlaunch', generic],
+  ['generic', 'Generic OpenAI client', 'agent', 'guide', 'OpenAI Chat', '/v1', 'setup-generic', 'https://github.com/Northlatch-Labs-LLC/xlaunch-gateway', generic],
 ] as const;
 
 export const tools: ToolDefinition[] = metadata.map(([

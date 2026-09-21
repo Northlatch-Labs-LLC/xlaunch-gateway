@@ -1,7 +1,7 @@
 # Xlaunch Gateway
 
 Xlaunch Gateway is a self-hosted LLM gateway: one OpenAI-compatible endpoint
-that routes each request across 45 free-tier providers with automatic
+that routes each request across 44 free-tier providers with automatic
 failover, per-key quota tracking and cooldowns, so a single unified key keeps
 working while individual providers rate-limit, error, or run out of quota.
 
@@ -98,7 +98,7 @@ The same CLI has `setup-claude`, `setup-codex`, `setup-cline`, `setup-continue`,
 ## Repository layout
 
 - `server/` — Express API, router, providers, SQLite migrations
-- `client/` — React dashboard (64 locales)
+- `client/` — React dashboard (English, French, Spanish)
 - `cli/` — `xlaunch-gateway` agent setup CLI
 - `shared/` — types shared by server and client
 - `desktop/` — Electron menu-bar app
@@ -114,4 +114,4 @@ npm run lint
 npm run db:migration:status
 ```
 
-Source and issues: https://github.com/xlaunch/xlaunch
+Source and issues: https://github.com/Northlatch-Labs-LLC/xlaunch-gateway

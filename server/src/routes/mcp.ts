@@ -267,7 +267,7 @@ function dispatchRpc(msg: JsonRpcRequest, id: number | string | null): unknown {
         protocolVersion: PROTOCOL_VERSION,
         capabilities: { tools: {} },
         serverInfo: { name: 'xlaunch-gateway', version: '1.0.0' },
-        instructions: 'Xlaunch Gateway gateway introspection: list usable free models (with per-model supported_parameters), check provider/key health, read usage/cache/compression stats, and switch the routing strategy. Inference goes through the OpenAI-compatible /v1 endpoints, not MCP.',
+        instructions: 'Xlaunch Gateway introspection: list usable free models (with per-model supported_parameters), check provider/key health, read usage/cache/compression stats, and switch the routing strategy. Inference goes through the OpenAI-compatible /v1 endpoints, not MCP.',
       });
     }
     case 'ping':

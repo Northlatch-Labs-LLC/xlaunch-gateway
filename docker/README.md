@@ -1,6 +1,8 @@
 # Docker Guide
 
-Docker Compose is the recommended way to run Xlaunch Gateway for personal use.
+Docker Compose is the recommended way to run Xlaunch Gateway on your own
+machine. For a gateway that serves customers over the internet, follow
+`DEPLOY.md` instead.
 The container serves the Express API and the built React dashboard from one
 process on port 3001, with SQLite persisted in a named volume. The image is
 built locally from this checkout as `xlaunch-gateway:latest`; nothing is pulled

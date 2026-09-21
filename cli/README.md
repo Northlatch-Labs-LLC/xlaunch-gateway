@@ -67,6 +67,6 @@ them into the child process environment for that run only.
 ## Requirements
 
 Node.js >= 20.18 and a running Xlaunch Gateway (see the repository README at
-https://github.com/xlaunch/xlaunch).
+https://github.com/Northlatch-Labs-LLC/xlaunch-gateway).
 
 MIT

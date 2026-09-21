@@ -147,7 +147,7 @@ async function catalog(url: string, apiKey: string, availableOnly = true): Promi
       : undefined;
     const reason = cause ?? (error instanceof Error ? error.message : String(error));
     throw new Error(
-      `Could not reach the Xlaunch Gateway gateway at ${rootUrl(url)} (${reason}). `
+      `Could not reach the Xlaunch Gateway at ${rootUrl(url)} (${reason}). `
       + 'Check that the server is running, or point the CLI at it with --url or XLAUNCH_GATEWAY_URL.',
     );
   }

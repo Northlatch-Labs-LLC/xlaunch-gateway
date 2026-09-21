@@ -1,16 +1,16 @@
 {
   "name": "xlaunch-gateway",
   "version": "0.5.1",
-  "description": "Set up coding agents to use a Xlaunch Gateway gateway",
+  "description": "Set up coding agents to use an Xlaunch Gateway",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/xlaunch/xlaunch.git",
+    "url": "git+https://github.com/Northlatch-Labs-LLC/xlaunch-gateway.git",
     "directory": "cli"
   },
-  "homepage": "https://github.com/xlaunch/xlaunch",
+  "homepage": "https://github.com/Northlatch-Labs-LLC/xlaunch-gateway",
   "bugs": {
-    "url": "https://github.com/xlaunch/xlaunch"
+    "url": "https://github.com/Northlatch-Labs-LLC/xlaunch-gateway"
   },
   "keywords": [
     "xlaunch-gateway",
