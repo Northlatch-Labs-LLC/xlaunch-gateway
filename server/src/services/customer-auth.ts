@@ -130,3 +130,87 @@ export function deleteCustomerSession(token: string | undefined | null): void {
   if (!token) return;
   getDb().prepare('DELETE FROM customer_sessions WHERE token_hash = ?').run(hashToken(token));
 }
+
+/** How long a password reset stays usable. Short: a link is a credential. */
+const RESET_TTL_MS = 60 * 60 * 1000;
+
+/** A reset that was issued. The token is returned once and never stored. */
+export interface PasswordReset {
+  token: string;
+  expiresAtMs: number;
+}
+
+/**
+ * Issue a password reset for an address.
+ *
+ * Returns null when no account holds that address. The CALLER must answer the
+ * same way either way: an endpoint that says "no such account" tells a stranger
+ * which addresses are registered here.
+ *
+ * Any reset already outstanding for the account is dropped first, so a person
+ * who clicks twice has exactly one live link rather than several.
+ *
+ * @param email - the address as typed.
+ * @returns the reset to deliver, or null when the address is not registered.
+ */
+export function createPasswordReset(email: string): PasswordReset | null {
+  const db = getDb();
+  const row = db.prepare('SELECT id, disabled FROM customers WHERE email = ?')
+    .get(normalizeEmail(email)) as { id: number; disabled: number } | undefined;
+  // A disabled account is not a route back in.
+  if (!row || row.disabled === 1) return null;
+
+  const token = crypto.randomBytes(32).toString('base64url');
+  const expiresAtMs = Date.now() + RESET_TTL_MS;
+  db.prepare('DELETE FROM customer_password_resets WHERE customer_id = ?').run(row.id);
+  db.prepare(
+    'INSERT INTO customer_password_resets (token_hash, customer_id, expires_at_ms) VALUES (?, ?, ?)',
+  ).run(hashToken(token), row.id, expiresAtMs);
+  return { token, expiresAtMs };
+}
+
+/** Why a reset could not be completed. The caller decides what to say. */
+export type ResetFailure = 'invalid' | 'expired' | 'used' | 'too_short';
+
+/**
+ * Set a new password from a reset token, single use.
+ *
+ * Every session the account holds is ended in the same transaction as the
+ * change. A password reset is what somebody does when they fear the account is
+ * not theirs alone; leaving the old sessions alive would defeat it.
+ *
+ * @param token - the token from the reset link.
+ * @param password - the new password.
+ * @returns the account, or the reason it failed.
+ */
+export function completePasswordReset(
+  token: string,
+  password: string,
+): { ok: true; customer: CustomerSession } | { ok: false; failure: ResetFailure } {
+  if (password.length < MIN_PASSWORD_LENGTH) return { ok: false, failure: 'too_short' };
+  const db = getDb();
+  const hash = hashToken(token);
+  const row = db.prepare(`
+    SELECT r.customer_id, r.expires_at_ms, r.used_at_ms, c.email, c.disabled
+    FROM customer_password_resets r JOIN customers c ON c.id = r.customer_id
+    WHERE r.token_hash = ?
+  `).get(hash) as {
+    customer_id: number; expires_at_ms: number; used_at_ms: number | null;
+    email: string; disabled: number;
+  } | undefined;
+
+  if (!row || row.disabled === 1) return { ok: false, failure: 'invalid' };
+  if (row.used_at_ms !== null) return { ok: false, failure: 'used' };
+  if (row.expires_at_ms < Date.now()) return { ok: false, failure: 'expired' };
+
+  const now = Date.now();
+  const apply = db.transaction(() => {
+    db.prepare('UPDATE customers SET password_hash = ? WHERE id = ?')
+      .run(hashPassword(password), row.customer_id);
+    db.prepare('UPDATE customer_password_resets SET used_at_ms = ? WHERE token_hash = ?')
+      .run(now, hash);
+    db.prepare('DELETE FROM customer_sessions WHERE customer_id = ?').run(row.customer_id);
+  });
+  apply();
+  return { ok: true, customer: { id: row.customer_id, email: row.email } };
+}

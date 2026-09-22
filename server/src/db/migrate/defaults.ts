@@ -34,6 +34,7 @@ import * as mcpEnabledDefault from '../migrations/20260903_000001_mcp_enabled_de
 import * as responseCache from '../migrations/20260903_000002_response_cache.js';
 import * as clientProfileSpendCaps from '../migrations/20260908_000001_client_profile_spend_caps.js';
 import * as customerAccountsAndBilling from '../migrations/20260908_000002_customer_accounts_and_billing.js';
+import * as passwordResetAndPlans from '../migrations/20260922_000001_password_reset_and_plans.js';
 
 export interface MigrationModule {
   up(db: Db): void;
@@ -80,6 +81,7 @@ export const MCP_ENABLED_DEFAULT_FILENAME = '20260903_000001_mcp_enabled_default
 export const RESPONSE_CACHE_FILENAME = '20260903_000002_response_cache.ts';
 export const CLIENT_PROFILE_SPEND_CAPS_FILENAME = '20260908_000001_client_profile_spend_caps.ts';
 export const CUSTOMER_ACCOUNTS_BILLING_FILENAME = '20260908_000002_customer_accounts_and_billing.ts';
+export const PASSWORD_RESET_AND_PLANS_FILENAME = '20260922_000001_password_reset_and_plans.ts';
 
 export const DEFAULT_MIGRATIONS: readonly DefaultMigration[] = [
   { filename: LEGACY_BASELINE_FILENAME, module: legacyBaseline },
@@ -117,4 +119,5 @@ export const DEFAULT_MIGRATIONS: readonly DefaultMigration[] = [
   { filename: RESPONSE_CACHE_FILENAME, module: responseCache },
   { filename: CLIENT_PROFILE_SPEND_CAPS_FILENAME, module: clientProfileSpendCaps },
   { filename: CUSTOMER_ACCOUNTS_BILLING_FILENAME, module: customerAccountsAndBilling },
+  { filename: PASSWORD_RESET_AND_PLANS_FILENAME, module: passwordResetAndPlans },
 ];

@@ -58,7 +58,9 @@ function httpError(message: string, status: number): Error {
 // log the current operator out mid-restore). `settings` is deliberately NOT
 // here: routing strategy, the unified key and the proxy config are exactly
 // what an operator expects a backup to bring back.
-const EXCLUDED_TABLES = new Set(['users', 'sessions', 'url_tokens']);
+// customer_password_resets holds live reset tokens (hashed): a credential table,
+// short-lived by design, with nothing in it a backup should carry forward.
+const EXCLUDED_TABLES = new Set(['users', 'sessions', 'url_tokens', 'customer_password_resets']);
 
 /** `backups` is the on-disk backup index itself; dumping and restoring it
  *  would wipe the metadata that tracks the files. `migrations` is the schema
@@ -243,13 +245,25 @@ function sqliteCreateTable(db: Db, table: string): string | null {
   return `${row.sql.replace(/^CREATE TABLE/i, 'CREATE TABLE IF NOT EXISTS')};`;
 }
 
+// Columns a backup carries as an empty string rather than their value. A customer's
+// password hash is a credential: a dump file that travels (downloaded, mailed, kept on a
+// laptop) must not be a list of hashes to crack. A restored customer cannot sign in until
+// they reset their password, which is the safe outcome; their balance, keys and ledger
+// come back intact. `verifyPassword` rejects an empty string outright, so a restored row
+// is never a row with a guessable password.
+const REDACTED_COLUMNS: Record<string, ReadonlySet<string>> = {
+  customers: new Set(['password_hash']),
+};
+
 function sqliteDumpTable(db: Db, table: string): string {
   const columns = (db.prepare(`PRAGMA table_info("${table}")`).all() as { name: string }[]).map((c) => c.name);
   const rows = db.prepare(`SELECT * FROM "${table}"`).all() as Record<string, unknown>[];
+  const redacted = REDACTED_COLUMNS[table];
   const lines: string[] = [`DELETE FROM "${table}";`];
   if (rows.length > 0) {
     const columnList = columns.map((c) => `"${c}"`).join(', ');
-    const valueRows = rows.map((row) => `(${columns.map((c) => sqliteEscape(row[c])).join(', ')})`);
+    const valueRows = rows.map((row) =>
+      `(${columns.map((c) => sqliteEscape(redacted?.has(c) ? '' : row[c])).join(', ')})`);
     lines.push(`INSERT INTO "${table}" (${columnList}) VALUES\n  ${valueRows.join(',\n  ')};`);
   }
   return lines.join('\n');

@@ -24,6 +24,7 @@ import { createHash, timingSafeEqual } from 'crypto';
 import { z } from 'zod';
 import { getDb } from '../db/index.js';
 import { balanceOf, postLedger } from '../services/billing.js';
+import { PLANS, clearPlan, customerForSubscription, planFor, setPlan } from '../services/customer-plan.js';
 
 export const serviceCreditsRouter = Router();
 
@@ -86,6 +87,63 @@ function requireServiceToken(req: Request, res: Response, next: NextFunction): v
   }
   next();
 }
+
+/** A plan change reported by the billing service. */
+const planSchema = z.object({
+  customerEmail: z.string().trim().toLowerCase().email().max(254),
+  // The plan now in force, or null when the subscription ended.
+  plan: z.enum(PLANS).nullable(),
+  // The processor's own subscription id. It is the idempotency key, and it is
+  // what stops a cancellation for an old subscription removing a newer plan.
+  subscriptionRef: z.string().trim().min(3).max(255),
+  // When the processor says it renews. Absent is a real answer; this service
+  // never computes a renewal date of its own.
+  renewsAtMs: z.number().int().positive().max(4_102_444_800_000).nullable().optional(),
+});
+
+// Which plan an account holds. Nothing recorded this before, so the account
+// page could not name a plan and the same person could subscribe twice.
+//
+// Idempotent on subscriptionRef: a webhook delivered twice reports 'unchanged'
+// rather than stacking a second plan.
+serviceCreditsRouter.post('/plan', requireServiceToken, (req: Request, res: Response) => {
+  const parsed = planSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: { message: 'Invalid plan request' } });
+    return;
+  }
+  const { customerEmail, plan, subscriptionRef, renewsAtMs } = parsed.data;
+  const customer = getDb().prepare('SELECT id FROM customers WHERE email = ?')
+    .get(customerEmail) as { id: number } | undefined;
+  if (!customer) {
+    // Same rule as a credit: the subscription is real even though the account
+    // is not, so the caller keeps the event and retries.
+    res.status(404).json({ error: { message: 'No customer has this email' } });
+    return;
+  }
+
+  if (plan === null) {
+    const cleared = clearPlan(customer.id, subscriptionRef);
+    // Not an error: a cancellation for a subscription this account has already
+    // replaced must leave the newer plan alone, and the caller needs to know
+    // nothing was removed.
+    res.json({ outcome: cleared ? 'cleared' : 'not-in-force', plan: planFor(customer.id) });
+    return;
+  }
+
+  const held = customerForSubscription(subscriptionRef);
+  if (held !== null && held !== customer.id) {
+    res.status(409).json({ error: { message: 'That subscription belongs to another account' } });
+    return;
+  }
+
+  const outcome = setPlan(customer.id, plan, subscriptionRef, renewsAtMs ?? null);
+  if (outcome === 'refused') {
+    res.status(400).json({ error: { message: 'That plan cannot be recorded' } });
+    return;
+  }
+  res.status(outcome === 'set' ? 201 : 200).json({ outcome, plan: planFor(customer.id) });
+});
 
 serviceCreditsRouter.post('/credits', requireServiceToken, (req: Request, res: Response) => {
   const parsed = creditSchema.safeParse(req.body);

@@ -15,13 +15,16 @@ import { encrypt, decrypt, maskKey } from '../lib/crypto.js';
 import { mintClientProfileKey, hashClientProfileKey } from '../lib/system-prompt.js';
 import {
   MIN_PASSWORD_LENGTH,
+  completePasswordReset,
   createCustomer,
   createCustomerSession,
+  createPasswordReset,
   deleteCustomerSession,
   validateCustomerSession,
   verifyCustomer,
   type CustomerSession,
 } from '../services/customer-auth.js';
+import { planFor } from '../services/customer-plan.js';
 import { balanceOf, ledgerFor, usdPerMillionTokens, billingEnabled } from '../services/billing.js';
 import { paymentConfig, normalizeSuiAddress } from '../services/payment-watcher.js';
 
@@ -124,6 +127,59 @@ customerRouter.post('/login', (req: Request, res: Response) => {
   res.json({ token: createCustomerSession(customer.id), email: customer.email });
 });
 
+// A forgotten password, without an operator on the server.
+//
+// Both routes answer the same way whether or not the address is registered.
+// An endpoint that distinguishes them is a way to ask this gateway which of a
+// list of addresses has an account here.
+//
+// The token is returned in the response rather than emailed, because this
+// gateway sends no mail. The surface in front of it decides how it reaches the
+// person; until one does, an operator reads it from here and hands it over.
+customerRouter.post('/password-reset', (req: Request, res: Response) => {
+  const parsed = z.object({ email: z.string().trim().email().max(200) }).safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: { message: 'A valid email is required' } });
+    return;
+  }
+  const reset = createPasswordReset(parsed.data.email);
+  const answer = {
+    success: true,
+    message: 'If that address has an account, a reset has been issued.',
+  };
+  res.json(reset === null ? answer : { ...answer, token: reset.token, expiresAtMs: reset.expiresAtMs });
+});
+
+customerRouter.post('/password-reset/complete', (req: Request, res: Response) => {
+  const parsed = z.object({
+    token: z.string().min(1).max(200),
+    password: z.string().min(MIN_PASSWORD_LENGTH).max(200),
+  }).safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({
+      error: { message: `A reset token and a password of at least ${String(MIN_PASSWORD_LENGTH)} characters are required` },
+    });
+    return;
+  }
+  const outcome = completePasswordReset(parsed.data.token, parsed.data.password);
+  if (!outcome.ok) {
+    // Expired and already-used are told apart on purpose: both are dead ends,
+    // but only one is worth asking for a new link over, and neither reveals
+    // whether an address is registered.
+    const said = {
+      invalid: 'That reset link is not valid.',
+      expired: 'That reset link has expired. Ask for a new one.',
+      used: 'That reset link has already been used. Ask for a new one.',
+      too_short: `A password of at least ${String(MIN_PASSWORD_LENGTH)} characters is required`,
+    }[outcome.failure];
+    res.status(outcome.failure === 'too_short' ? 400 : 410).json({ error: { message: said } });
+    return;
+  }
+  // Signed straight in: the person just proved they hold the address, and
+  // every older session was ended by the reset itself.
+  res.json({ token: createCustomerSession(outcome.customer.id), email: outcome.customer.email });
+});
+
 customerRouter.post('/logout', (req: Request, res: Response) => {
   deleteCustomerSession(req.headers.authorization?.replace(/^Bearer\s+/i, ''));
   res.json({ success: true });
@@ -137,6 +193,9 @@ customerRouter.get('/me', requireCustomer, (req: Request, res: Response) => {
     balanceMicros: balanceOf(customer.id),
     billingEnabled: billingEnabled(),
     usdPerMillionTokens: usdPerMillionTokens(),
+    // The plan in force, or null for pay as you go. Null is a real answer, not
+    // a missing one: an account that never subscribed holds no plan.
+    plan: planFor(customer.id),
     // Where to send funds, so the portal never hardcodes an address.
     treasury: {
       sui: config.suiTreasury,

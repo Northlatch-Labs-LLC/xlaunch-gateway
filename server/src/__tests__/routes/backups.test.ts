@@ -7,6 +7,7 @@ import { createApp } from '../../app.js';
 import { initDb, getDb } from '../../db/index.js';
 import { mintDashboardToken, isGatedApiPath } from '../helpers/auth.js';
 import { createBackup } from '../../services/backups.js';
+import { createCustomer } from '../../services/customer-auth.js';
 
 let dashToken = '';
 let dataDir = '';
@@ -130,12 +131,22 @@ describe('Backups API', () => {
     expect((getDb().prepare('SELECT COUNT(*) AS n FROM users').get() as { n: number }).n).toBeGreaterThan(0);
     expect((getDb().prepare('SELECT COUNT(*) AS n FROM sessions').get() as { n: number }).n).toBeGreaterThan(0);
 
+    // A customer with a real hash, so the redaction below is exercised rather than
+    // trivially true on an empty table.
+    createCustomer('dump-check@example.com', 'a-password-of-length');
     const created = await request(app, 'POST', '/api/backups', {});
     const sql = fs.readFileSync(dumpPath(created.body.backup.id), 'utf8');
     expect(sql).not.toMatch(/INSERT INTO "users"/);
     expect(sql).not.toMatch(/INSERT INTO "sessions"/);
     expect(sql).not.toMatch(/INSERT INTO "url_tokens"/);
-    expect(sql).not.toMatch(/password_hash/);
+    // The column NAME appears in the schema and the insert header of any table that
+    // has one (customers keeps it, redacted); the hash VALUES are what must never
+    // travel. Every hash this gateway writes starts with its algorithm tag.
+    expect(sql).not.toMatch(/scrypt\$/);
+    expect(sql).not.toMatch(/\$2[aby]\$/);
+    // Customers still come back — with an empty password, so a restore cannot sign in
+    // as anyone until they reset it.
+    expect(sql).toMatch(/INSERT INTO "customers"/);
     // Operator settings are still in there: that is what a backup is for.
     expect(sql).toMatch(/INSERT INTO "settings"/);
 
