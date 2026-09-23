@@ -3,6 +3,8 @@ import type { NextFunction, Request, Response } from 'express';
 import { clientContextMiddleware, getClientContext } from '../../lib/client-context.js';
 
 // Minimal fake req: the middleware only touches headers, socket, and req.ip.
+// profileId is always null here: it is set later, at authentication, and the
+// privacy opt-out leaves it alone because spend caps are an operator control.
 // `ip` is what Express resolves from the socket peer address (or from the
 // X-Forwarded-For chain when `trust proxy` is enabled) — the middleware reads
 // req.ip rather than re-implementing the trust chain itself (#1024).
@@ -25,7 +27,7 @@ describe('clientContextMiddleware', () => {
 
   it('captures the socket peer address and user agent', () => {
     const ctx = contextFor(fakeReq({ 'user-agent': 'curl/8.6.0' }, '192.168.0.42'));
-    expect(ctx).toEqual({ ip: '192.168.0.42', userAgent: 'curl/8.6.0', agent: 'unknown' });
+    expect(ctx).toEqual({ ip: '192.168.0.42', userAgent: 'curl/8.6.0', agent: 'unknown', profileId: null });
   });
 
   it('uses Express-resolved req.ip (trust-proxy chain) when available', () => {
@@ -61,10 +63,10 @@ describe('clientContextMiddleware', () => {
   it('stores nulls when REQUEST_ANALYTICS_LOG_CLIENT=false', () => {
     process.env.REQUEST_ANALYTICS_LOG_CLIENT = 'false';
     const ctx = contextFor(fakeReq({ 'user-agent': 'curl/8.6.0' }, '192.168.0.42'));
-    expect(ctx).toEqual({ ip: null, userAgent: null, agent: null });
+    expect(ctx).toEqual({ ip: null, userAgent: null, agent: null, profileId: null });
   });
 
   it('returns nulls outside any request scope', () => {
-    expect(getClientContext()).toEqual({ ip: null, userAgent: null, agent: null });
+    expect(getClientContext()).toEqual({ ip: null, userAgent: null, agent: null, profileId: null });
   });
 });
