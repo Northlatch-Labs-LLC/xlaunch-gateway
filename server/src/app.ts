@@ -54,7 +54,7 @@ const DEFAULT_DASHBOARD_ORIGINS = [
 // must run before first paint. Kept as a literal so the CSP header stays a
 // constant string; csp-inline-bootstrap.test.ts recomputes it from the real
 // index.html (source and build) and fails if the two ever drift apart.
-export const INLINE_BOOTSTRAP_SHA = "'sha256-mSdBT+MmlsU2d7bI5IlnAg+k9C1mvZTNa0bmV5LQcpg='";
+export const INLINE_BOOTSTRAP_SHA = "'sha256-o1MI2dZRSaaMUNnvAeP9Vh5baqV4qL7Sfo46uoxjGrY='";
 
 // A build asset is safe to cache forever+immutable when its URL is
 // content-addressed. Vite parks every hashed chunk (JS, CSS, fonts, images)
