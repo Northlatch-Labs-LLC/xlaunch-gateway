@@ -40,6 +40,7 @@ const RESPONSE_CACHE_FILENAME = '20260903_000002_response_cache.ts';
 const CLIENT_PROFILE_SPEND_CAPS_FILENAME = '20260908_000001_client_profile_spend_caps.ts';
 const CUSTOMER_ACCOUNTS_BILLING_FILENAME = '20260908_000002_customer_accounts_and_billing.ts';
 const PASSWORD_RESET_AND_PLANS_FILENAME = '20260922_000001_password_reset_and_plans.ts';
+const SERVICE_CHARGES_FILENAME = '20260924_000001_service_charges.ts';
 
 interface SchemaRow {
   type: string;
@@ -126,6 +127,7 @@ describe('migration round trip', () => {
         CLIENT_PROFILE_SPEND_CAPS_FILENAME,
         CUSTOMER_ACCOUNTS_BILLING_FILENAME,
         PASSWORD_RESET_AND_PLANS_FILENAME,
+        SERVICE_CHARGES_FILENAME,
       ]);
     } finally {
       db.close();

@@ -9,6 +9,7 @@ import { clientProfilesRouter } from './routes/client-profiles.js';
 import { customerRouter } from './routes/customer.js';
 import { billingAdminRouter } from './routes/billing-admin.js';
 import { serviceCreditsRouter } from './routes/service-credits.js';
+import { serviceChargesRouter } from './routes/service-charges.js';
 import { conversationsRouter } from './routes/conversations.js';
 import { logsRouter } from './routes/logs.js';
 import { modelsRouter } from './routes/models.js';
@@ -236,6 +237,7 @@ export function createApp(config?: Config) {
   // session cannot reach it either: only the billing service can.
   app.use('/service-api', createAdminRateLimiter());
   app.use('/service-api', serviceCreditsRouter);
+  app.use('/service-api', serviceChargesRouter);
 
   // Key export re-verifies the dashboard password, which makes it the one admin
   // endpoint a guesser can attack. The broad limiter above is sized for normal
