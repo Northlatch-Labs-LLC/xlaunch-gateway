@@ -25,6 +25,8 @@ import {
   type CustomerSession,
 } from '../services/customer-auth.js';
 import { planFor } from '../services/customer-plan.js';
+import { mintHarnessAccess, verifyHarnessAccess } from '../services/harness-access.js';
+import { sendHarnessAccessMail } from '../services/mailer.js';
 import { balanceOf, ledgerFor, usdPerMillionTokens, billingEnabled } from '../services/billing.js';
 import { paymentConfig, normalizeSuiAddress } from '../services/payment-watcher.js';
 
@@ -102,7 +104,23 @@ customerRouter.post('/signup', (req: Request, res: Response) => {
   }
   try {
     const customer = createCustomer(parsed.data.email, parsed.data.password);
-    res.status(201).json({ token: createCustomerSession(customer.id), email: customer.email });
+    // The welcome mail carries the hosted-harness link, so a non-technical
+    // user's first access is the email they just got. Mail is fire-and-forget:
+    // a slow or down SMTP host must not delay or fail a signup that already
+    // succeeded, and the account page remains the way in either way.
+    const access = mintHarnessAccess(customer.id);
+    const origin = harnessOrigin();
+    const harnessAccessUrl = origin === null
+      ? undefined
+      : `${origin}/auth/access?token=${encodeURIComponent(access.token)}`;
+    if (harnessAccessUrl !== undefined) {
+      void sendHarnessAccessMail(customer.email, harnessAccessUrl).catch(() => undefined);
+    }
+    res.status(201).json({
+      token: createCustomerSession(customer.id),
+      email: customer.email,
+      harnessAccessUrl,
+    });
   } catch (error) {
     const code = (error as { code?: string }).code;
     if (code === 'email_taken') {
@@ -327,4 +345,65 @@ customerRouter.delete('/keys/:id', requireCustomer, (req: Request, res: Response
   db.prepare('DELETE FROM client_profile_usage WHERE profile_id = ?').run(id);
   db.prepare('DELETE FROM client_profiles WHERE id = ?').run(id);
   res.json({ success: true });
+});
+
+// ------------------------------------------------------------------ harness
+//
+// Access to the hosted harness rides the account, not a terminal: the site's
+// account page mints a token and opens the harness with it, a welcome email
+// carries the same kind of link, and the harness itself asks this gateway to
+// verify whatever token a browser brings. The gateway stays the one identity
+// authority; the harness learns only the account's address.
+
+/** Where the hosted harness lives, for building access URLs. Optional: a
+ *  surface that knows its own address composes the URL itself. */
+function harnessOrigin(): string | null {
+  const raw = process.env.XLAUNCH_HARNESS_URL;
+  if (!raw) return null;
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
+    return raw.replace(/\/+$/, '');
+  } catch {
+    return null;
+  }
+}
+
+customerRouter.post('/harness-access', requireCustomer, (req: Request, res: Response) => {
+  const access = mintHarnessAccess(current(req).id);
+  const origin = harnessOrigin();
+  res.json({
+    token: access.token,
+    expiresAtMs: access.expiresAtMs,
+    url: origin === null ? undefined : `${origin}/auth/access?token=${encodeURIComponent(access.token)}`,
+  });
+});
+
+customerRouter.post('/harness-access/email', requireCustomer, async (req: Request, res: Response) => {
+  const customer = current(req);
+  const access = mintHarnessAccess(customer.id);
+  const origin = harnessOrigin();
+  if (origin === null) {
+    res.status(503).json({ error: { message: 'The hosted harness is not connected to this gateway yet' } });
+    return;
+  }
+  const url = `${origin}/auth/access?token=${encodeURIComponent(access.token)}`;
+  const mail = await sendHarnessAccessMail(customer.email, url);
+  res.json({ sent: mail.sent, reason: mail.sent === true ? undefined : mail.reason, url });
+});
+
+customerRouter.post('/harness-verify', (req: Request, res: Response) => {
+  const parsed = z.object({ token: z.string().min(1).max(200) }).safeParse(req.body);
+  if (!parsed.success) {
+    res.status(401).json({ ok: false, error: { message: 'A valid access token is required' } });
+    return;
+  }
+  const account = verifyHarnessAccess(parsed.data.token);
+  if (account === null) {
+    // The same answer for unknown, expired, and disabled: a stranger probing
+    // tokens learns nothing about which of the three they hit.
+    res.status(401).json({ ok: false, error: { message: 'This access link is not valid. Open harness access again from your account.' } });
+    return;
+  }
+  res.json({ ok: true, email: account.email });
 });
