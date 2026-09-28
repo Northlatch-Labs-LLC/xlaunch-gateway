@@ -200,3 +200,26 @@ Be explicit with whoever operates this:
   A customer who forgets their password needs operator help.
 - The SUI/USD rate is manual. There is no price feed.
 - Payment settlement is as fast as the poll, so up to sixty seconds.
+
+## The database volume is the deployment's invariant
+
+The platform's deploy generator mounts a **fresh, per-deploy named volume** at
+`/app/server/data` (pattern `{deploy-uuid}-gateway-data`). A gateway that boots
+on one of those starts with an empty database: every account, key, and session
+is invisible, and signups during that window land in the empty file.
+
+Before any gateway redeploy, the data must ride along:
+
+1. The canonical volume `xlaunch-gateway-data` on the app server holds the
+   authoritative copy. Refresh it from the live container while it is healthy:
+   `docker cp <gw>:/app/server/data/. /tmp/gw-canonical-dir/` then
+   `cp -a /tmp/gw-canonical-dir/. /var/lib/docker/volumes/xlaunch-gateway-data/_data/`
+2. After the deploy brings the new container up, stop it, copy the canonical
+   data into the new container's volume
+   (`cp -a <canonical>/. <new-deploy-volume>/_data/`), and start it. On boot the
+   app applies any pending migrations to the restored database.
+
+Verify after every gateway deploy: a known API key still answers `200` on
+`/v1/models`, and customer/key row counts match. The real fix — making the
+platform's generator mount a steady volume for stateful apps — is tracked as
+platform work.
