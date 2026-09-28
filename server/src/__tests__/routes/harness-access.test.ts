@@ -54,7 +54,7 @@ describe('hosted harness access', () => {
       const session = createCustomerSession(1);
       const minted = await call(app, 'POST', '/customer-api/harness-access', {}, session);
       expect(minted.status).toBe(200);
-      expect(String(minted.body?.url)).toMatch(/^https:\/\/harness\.example\.work\/auth\/access\?token=/);
+      expect(String(minted.body?.url)).toMatch(/^https:\/\/harness\.example\.work\/auth\/access\/[A-Za-z0-9_-]+$/);
     } finally {
       delete process.env.XLAUNCH_HARNESS_URL;
     }

@@ -59,7 +59,10 @@ export function mailConfig(): MailConfig | null {
   };
 }
 
-/** The welcome mail's content, shared by both transports. */
+/** The welcome mail's content, shared by both transports. The button is the
+ *  bulletproof table pattern: mail clients that strip styled inline anchors
+ *  still render the link, and nothing in the markup depends on the client
+ *  keeping an element's CSS to keep its href. */
 function welcomeMail(accessUrl: string): { subject: string; text: string; html: string } {
   return {
     subject: 'Your Xlaunch harness is ready',
@@ -77,7 +80,7 @@ function welcomeMail(accessUrl: string): { subject: string; text: string; html: 
     html: [
       '<p>Welcome to <strong>Xlaunch</strong>.</p>',
       '<p>Your hosted harness is ready — it opens in your browser and needs nothing installed.</p>',
-      `<p><a href="${accessUrl}" style="display:inline-block;padding:10px 18px;border-radius:6px;background:#0a0f0c;color:#45c580;text-decoration:none;font-weight:600">Open your harness</a></p>`,
+      `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:16px 0"><tr><td bgcolor="#0a0f0c" style="border-radius:6px"><a href="${accessUrl}" target="_blank" style="display:inline-block;padding:10px 18px;font-family:-apple-system,'Segoe UI',sans-serif;font-size:14px;font-weight:600;color:#45c580;text-decoration:none;border-radius:6px">Open your harness</a></td></tr></table>`,
       `<p style="font-size:12px;color:#666">Or paste this link: ${accessUrl}<br>The link works for 24 hours; after that, reopen harness access from your account at https://xlaunch.work.</p>`,
     ].join('\n'),
   };

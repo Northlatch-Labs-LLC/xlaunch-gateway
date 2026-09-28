@@ -112,7 +112,7 @@ customerRouter.post('/signup', (req: Request, res: Response) => {
     const origin = harnessOrigin();
     const harnessAccessUrl = origin === null
       ? undefined
-      : `${origin}/auth/access?token=${encodeURIComponent(access.token)}`;
+      : `${origin}/auth/access/${access.token}`;
     if (harnessAccessUrl !== undefined) {
       void sendHarnessAccessMail(customer.email, harnessAccessUrl).catch(() => undefined);
     }
@@ -375,7 +375,7 @@ customerRouter.post('/harness-access', requireCustomer, (req: Request, res: Resp
   res.json({
     token: access.token,
     expiresAtMs: access.expiresAtMs,
-    url: origin === null ? undefined : `${origin}/auth/access?token=${encodeURIComponent(access.token)}`,
+    url: origin === null ? undefined : `${origin}/auth/access/${access.token}`,
   });
 });
 
@@ -387,7 +387,7 @@ customerRouter.post('/harness-access/email', requireCustomer, async (req: Reques
     res.status(503).json({ error: { message: 'The hosted harness is not connected to this gateway yet' } });
     return;
   }
-  const url = `${origin}/auth/access?token=${encodeURIComponent(access.token)}`;
+  const url = `${origin}/auth/access/${access.token}`;
   const mail = await sendHarnessAccessMail(customer.email, url);
   res.json({ sent: mail.sent, reason: mail.sent === true ? undefined : mail.reason, url });
 });
