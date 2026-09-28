@@ -87,6 +87,20 @@ describe('hosted harness access', () => {
     expect(expired.status).toBe(401);
   });
 
+
+  it('selects the resend transport from RESEND_API_KEY and demands a sender', () => {
+    process.env.RESEND_API_KEY = 're_test';
+    delete process.env.SMTP_FROM;
+    expect(() => mailConfig()).toThrow(/SMTP_FROM/u);
+    process.env.SMTP_FROM = 'no-reply@xlaunch.work';
+    expect(mailConfig()?.driver).toBe('resend');
+    delete process.env.RESEND_API_KEY;
+    process.env.SMTP_HOST = 'smtp.example.com';
+    expect(mailConfig()?.driver).toBe('smtp');
+    delete process.env.SMTP_HOST;
+    delete process.env.SMTP_FROM;
+  });
+
   it('sends no mail and fails no surface while SMTP is unconfigured', async () => {
     expect(mailConfig()).toBeNull();
     const session = createCustomerSession(1);
