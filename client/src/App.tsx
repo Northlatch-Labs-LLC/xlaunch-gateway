@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { Suspense, lazy, useState, type ReactNode } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, NavLink, Link, useLocation, useNavigate } from 'react-router-dom'
 import { MutationCache, QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ChevronDown, KeyRound, LogOut, Menu, MoreHorizontal, Search, Settings } from 'lucide-react'
@@ -34,6 +34,10 @@ import LogsPage from '@/pages/LogsPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 import AgentsPage from '@/pages/AgentsPage'
 import PortalPage from '@/pages/PortalPage'
+
+// The public landing page is the one route split out of the main bundle: a
+// first-time visitor downloads marketing, not the dashboard.
+const LandingPage = lazy(() => import('@/pages/LandingPage'))
 
 // Every failed mutation surfaces as an error toast, so no action fails
 // silently. A page that already shows the failure inline can opt out with
@@ -119,7 +123,9 @@ function NavItem({ to, children }: { to: string; children: React.ReactNode }) {
 
 function Brand() {
   return (
-    <Link to="/" className="flex items-center gap-2 transition-opacity hover:opacity-70">
+    // `/admin`, not `/`: the brand mark is dashboard chrome, and the root is
+    // now the public landing page.
+    <Link to="/admin" className="flex items-center gap-2 transition-opacity hover:opacity-70">
       <span className="inline-block size-2 rounded-full bg-foreground" />
       <span className="font-semibold tracking-tight text-sm">Xlaunch Gateway</span>
     </Link>
@@ -426,6 +432,18 @@ function App() {
                 <Route path="*" element={<><PortalPage /><Toaster /></>} />
               ) : (
                 <>
+                  {/* The root is the public landing page: the only place a
+                      first-time visitor is sold the product. Static `/` wins
+                      route ranking over the `*` catch-all below, so the
+                      dashboard keeps every existing path untouched. */}
+                  <Route
+                    path="/"
+                    element={(
+                      <Suspense fallback={<div className="min-h-screen bg-background" />}>
+                        <LandingPage />
+                      </Suspense>
+                    )}
+                  />
                   <Route path="/portal/*" element={<><PortalPage /><Toaster /></>} />
                   <Route path="*" element={<OperatorApp />} />
                 </>
@@ -451,7 +469,10 @@ function OperatorApp() {
                 <PageContainer>
                   <PageBoundary>
                     <Routes>
-                      <Route path="/" element={<Navigate to="/models/chat" replace />} />
+                      {/* The dashboard's front door: `/` now belongs to the
+                          public landing, so the operator shell enters here
+                          and lands on the chat table as before. */}
+                      <Route path="/admin" element={<Navigate to="/models/chat" replace />} />
                       <Route path="/models" element={<Navigate to="/models/chat" replace />} />
                       <Route path="/models/chat" element={<FallbackPage />} />
                       <Route path="/models/chat/:id" element={<ModelDetailPage />} />

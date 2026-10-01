@@ -1089,5 +1089,98 @@
     "arrivedDesc": "Transferencias vistas en la cadena, las más recientes primero.",
     "noPayments": "Aún no hay pagos.",
     "unmatched": "remitente sin asignar"
+  },
+  "landing": {
+    "metaTitle": "Xlaunch Gateway · Un único endpoint para todos los proveedores de IA",
+    "metaTitleDefault": "Xlaunch Gateway · Enrutador LLM unificado",
+    "nav": {
+      "label": "Página de inicio",
+      "signIn": "Iniciar sesión"
+    },
+    "hero": {
+      "badge": "Autoalojado · Licencia MIT",
+      "title": "Un endpoint para más de 44 proveedores de IA. Tus claves, tus reglas.",
+      "subtitle": "Xlaunch Gateway es una pasarela LLM autoalojada que enruta el tráfico de OpenAI, Anthropic, Gemini, Ollama y MCP a través de un único endpoint compatible con OpenAI — con conmutación automática, cuotas por clave y analítica completa.",
+      "ctaPrimary": "Crear una cuenta",
+      "ctaSecondary": "Leer la documentación de la API"
+    },
+    "formats": {
+      "label": "Formatos admitidos",
+      "openai": "OpenAI",
+      "anthropic": "Anthropic Messages",
+      "responses": "OpenAI Responses",
+      "gemini": "Google Gemini",
+      "ollama": "Ollama",
+      "mcp": "MCP"
+    },
+    "features": {
+      "kicker": "Por qué Xlaunch Gateway",
+      "title": "Todo lo que ofrece una API alojada — sin entregar tus claves",
+      "wire": {
+        "title": "Cinco formatos, un único endpoint",
+        "desc": "Las llamadas OpenAI, Anthropic Messages, OpenAI Responses, Gemini y Ollama pasan todas por el mismo enrutador; los clientes MCP se conectan en /mcp."
+      },
+      "failover": {
+        "title": "Conmutación y descansos automáticos",
+        "desc": "Las peticiones esquivan límites de tasa, errores y cuotas agotadas; los proveedores que fallan entran en descanso y vuelven solos."
+      },
+      "quotas": {
+        "title": "Seguimiento de cuotas por clave",
+        "desc": "Cada clave de proveedor lleva sus propias señales de cuota y su gasto: un nivel gratuito agotado nunca detiene la flota."
+      },
+      "cache": {
+        "title": "Caché de respuestas",
+        "desc": "Las peticiones idénticas se responden desde la caché antes de llegar a un proveedor."
+      },
+      "compression": {
+        "title": "Compresión de prompts",
+        "desc": "Los prompts largos se comprimen antes de salir, recortando tokens y coste en cada llamada."
+      },
+      "analytics": {
+        "title": "Analítica y registros",
+        "desc": "Registros por petición, contadores de tokens y analítica de coste incluidos con el panel — sin servicios externos."
+      },
+      "selfhosted": {
+        "title": "Autoalojado: SQLite, un solo proceso",
+        "desc": "Node, Express y SQLite en un único proceso; el panel y la API se sirven desde la misma máquina."
+      },
+      "license": {
+        "title": "Licencia MIT",
+        "desc": "Gratis y de código abierto. Tus claves de proveedor permanecen en tu máquina, nunca en la nuestra."
+      }
+    },
+    "how": {
+      "kicker": "Cómo funciona",
+      "title": "En marcha en tres pasos",
+      "step1": {
+        "title": "Despliega la pasarela",
+        "desc": "Un contenedor, o simplemente npm en cualquier máquina con Node 20.18+.",
+        "alt": "…o sin Docker:"
+      },
+      "step2": {
+        "title": "Añade tus claves de proveedor",
+        "desc": "Pega las claves en la página Keys; la pasarela te devuelve a cambio una clave unificada:"
+      },
+      "step3": {
+        "title": "Apunta tus clientes a un único endpoint",
+        "desc": "Cualquier cliente compatible con OpenAI — o Anthropic, Gemini, Ollama — funciona sin cambios.",
+        "alt": "\"model\": \"auto\" deja elegir al enrutador; cualquier id del catálogo fija ese modelo."
+      }
+    },
+    "pricing": {
+      "kicker": "Precios",
+      "title": "Precios honestos: el software es gratis",
+      "software": "La pasarela en sí",
+      "priceNote": "gratis, licencia MIT, autoalojado",
+      "bulletSoftware": "El software es gratuito y de código abierto. Clónalo, ejecútalo, hazle fork.",
+      "bulletInference": "El coste de inferencia es el de tus propias claves de proveedor — y los 44 proveedores de nivel gratuito incluidos no cuestan nada.",
+      "bulletHosted": "Si alguien aloja una pasarela para ti, la inferencia se liquida a través del portal de clientes, a la tarifa que publique.",
+      "cta": "Crear una cuenta"
+    },
+    "footer": {
+      "license": "Licencia MIT",
+      "navLabel": "Pie de página",
+      "apiDocs": "Referencia de la API"
+    }
   }
 }

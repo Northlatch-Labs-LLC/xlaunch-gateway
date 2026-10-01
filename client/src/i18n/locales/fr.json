@@ -1089,5 +1089,98 @@
     "arrivedDesc": "Transferts vus sur la chaîne, les plus récents en premier.",
     "noPayments": "Aucun paiement.",
     "unmatched": "expéditeur inconnu"
+  },
+  "landing": {
+    "metaTitle": "Xlaunch Gateway · Un seul endpoint pour tous les fournisseurs d'IA",
+    "metaTitleDefault": "Xlaunch Gateway · Routeur LLM unifié",
+    "nav": {
+      "label": "Page d'accueil",
+      "signIn": "Se connecter"
+    },
+    "hero": {
+      "badge": "Auto-hébergé · Licence MIT",
+      "title": "Un endpoint pour plus de 44 fournisseurs d'IA. Vos clés, vos règles.",
+      "subtitle": "Xlaunch Gateway est une passerelle LLM auto-hébergée qui achemine le trafic OpenAI, Anthropic, Gemini, Ollama et MCP vers un seul endpoint compatible OpenAI — avec basculement automatique, quotas par clé et analytique complète.",
+      "ctaPrimary": "Créer un compte",
+      "ctaSecondary": "Lire la documentation API"
+    },
+    "formats": {
+      "label": "Formats pris en charge",
+      "openai": "OpenAI",
+      "anthropic": "Anthropic Messages",
+      "responses": "OpenAI Responses",
+      "gemini": "Google Gemini",
+      "ollama": "Ollama",
+      "mcp": "MCP"
+    },
+    "features": {
+      "kicker": "Pourquoi Xlaunch Gateway",
+      "title": "Tout ce qu'offre une API hébergée — sans leur confier vos clés",
+      "wire": {
+        "title": "Cinq formats, un seul endpoint",
+        "desc": "Les appels OpenAI, Anthropic Messages, OpenAI Responses, Gemini et Ollama passent tous par le même routeur ; les clients MCP se connectent à /mcp."
+      },
+      "failover": {
+        "title": "Basculement et repos automatiques",
+        "desc": "Les requêtes contournent limites de débit, erreurs et quotas épuisés ; les fournisseurs en échec se mettent en repos puis reviennent d'eux-mêmes."
+      },
+      "quotas": {
+        "title": "Suivi des quotas par clé",
+        "desc": "Chaque clé de fournisseur porte ses propres signaux de quota et sa dépense : un palier gratuit épuisé ne bloque jamais la flotte."
+      },
+      "cache": {
+        "title": "Cache de réponses",
+        "desc": "Les requêtes identiques sont servies depuis le cache avant même d'atteindre un fournisseur."
+      },
+      "compression": {
+        "title": "Compression des prompts",
+        "desc": "Les prompts longs sont comprimés avant de sortir, réduisant tokens et coût à chaque appel."
+      },
+      "analytics": {
+        "title": "Analytique et journaux",
+        "desc": "Journaux par requête, compteurs de tokens et analytique de coût livrés avec le tableau de bord — sans service externe."
+      },
+      "selfhosted": {
+        "title": "Auto-hébergé : SQLite, un seul processus",
+        "desc": "Node, Express et SQLite dans un unique processus ; le tableau de bord et l'API sont servis par la même machine."
+      },
+      "license": {
+        "title": "Licence MIT",
+        "desc": "Gratuit et open source. Vos clés de fournisseur restent sur votre machine, jamais chez nous."
+      }
+    },
+    "how": {
+      "kicker": "Comment ça marche",
+      "title": "Opérationnel en trois étapes",
+      "step1": {
+        "title": "Déployez la passerelle",
+        "desc": "Un conteneur, ou simplement npm sur toute machine avec Node 20.18+.",
+        "alt": "…ou sans Docker :"
+      },
+      "step2": {
+        "title": "Ajoutez vos clés de fournisseur",
+        "desc": "Collez vos clés dans la page Keys ; la passerelle vous remet une clé unifiée en échange :"
+      },
+      "step3": {
+        "title": "Pointez vos clients vers un seul endpoint",
+        "desc": "Tout client compatible OpenAI — ou Anthropic, Gemini, Ollama — fonctionne sans changement.",
+        "alt": "\"model\": \"auto\" laisse le routeur choisir ; tout identifiant du catalogue épingle ce modèle."
+      }
+    },
+    "pricing": {
+      "kicker": "Tarification",
+      "title": "Une tarification honnête : le logiciel est gratuit",
+      "software": "La passerelle elle-même",
+      "priceNote": "gratuit, licence MIT, auto-hébergé",
+      "bulletSoftware": "Le logiciel est gratuit et open source. Clonez-le, exécutez-le, forkez-le.",
+      "bulletInference": "Les coûts d'inférence sont ceux de vos propres clés de fournisseur — et les 44 fournisseurs de palier gratuit inclus ne coûtent rien.",
+      "bulletHosted": "Si quelqu'un héberge une passerelle pour vous, vous réglez l'inférence via le portail client, au tarif qu'il publie.",
+      "cta": "Créer un compte"
+    },
+    "footer": {
+      "license": "Licence MIT",
+      "navLabel": "Pied de page",
+      "apiDocs": "Référence API"
+    }
   }
 }

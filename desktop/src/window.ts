@@ -40,7 +40,9 @@ export function openDashboard(port: number, token: string): void {
     },
   });
 
-  dashboardWindow.loadURL(`http://127.0.0.1:${port}`);
+  // /admin is the dashboard's front door; the bare root now serves the public
+  // landing page, which the desktop shell has no use for.
+  dashboardWindow.loadURL(`http://127.0.0.1:${port}/admin`);
   dashboardWindow.on('closed', () => {
     dashboardWindow = null;
   });

@@ -1089,5 +1089,98 @@
     "arrivedDesc": "Transfers seen on chain, newest first.",
     "noPayments": "No payments yet.",
     "unmatched": "unmatched sender"
+  },
+  "landing": {
+    "metaTitle": "Xlaunch Gateway · One endpoint for every AI provider",
+    "metaTitleDefault": "Xlaunch Gateway · Unified LLM Router",
+    "nav": {
+      "label": "Landing",
+      "signIn": "Sign in"
+    },
+    "hero": {
+      "badge": "Self-hosted · MIT licensed",
+      "title": "One endpoint for 44+ AI providers. Your keys, your rules.",
+      "subtitle": "Xlaunch Gateway is a self-hosted LLM gateway that routes OpenAI, Anthropic, Gemini, Ollama and MCP traffic through a single OpenAI-compatible endpoint — with automatic failover, per-key quotas and full analytics.",
+      "ctaPrimary": "Create your account",
+      "ctaSecondary": "Read the API docs"
+    },
+    "formats": {
+      "label": "Supported wire formats",
+      "openai": "OpenAI",
+      "anthropic": "Anthropic Messages",
+      "responses": "OpenAI Responses",
+      "gemini": "Google Gemini",
+      "ollama": "Ollama",
+      "mcp": "MCP"
+    },
+    "features": {
+      "kicker": "Why Xlaunch Gateway",
+      "title": "Everything a hosted API gives you — without handing over your keys",
+      "wire": {
+        "title": "Five wire formats, one endpoint",
+        "desc": "OpenAI chat, Anthropic Messages, OpenAI Responses, Gemini and Ollama calls all resolve against the same router; MCP clients connect at /mcp."
+      },
+      "failover": {
+        "title": "Automatic failover and cooldowns",
+        "desc": "Requests route around rate limits, errors and exhausted quota; tripped providers cool down and return on their own."
+      },
+      "quotas": {
+        "title": "Per-key quota tracking",
+        "desc": "Every provider key carries its own quota signals and spend, so one exhausted free tier never stalls the fleet."
+      },
+      "cache": {
+        "title": "Response cache",
+        "desc": "Identical requests are answered from the cache before they ever reach a provider."
+      },
+      "compression": {
+        "title": "Prompt compression",
+        "desc": "Long prompts shrink before they leave the box, cutting tokens and cost on every call."
+      },
+      "analytics": {
+        "title": "Analytics and logs",
+        "desc": "Per-request logs, token counts and cost analytics ship with the dashboard — no external service."
+      },
+      "selfhosted": {
+        "title": "Self-hosted: SQLite, one process",
+        "desc": "Node, Express and SQLite in a single process; the dashboard and the API are served from the same box."
+      },
+      "license": {
+        "title": "MIT licensed",
+        "desc": "Free and open source. Your provider keys stay on your machine, never on ours."
+      }
+    },
+    "how": {
+      "kicker": "How it works",
+      "title": "Running in three steps",
+      "step1": {
+        "title": "Deploy the gateway",
+        "desc": "One container, or plain npm on any box with Node 20.18+.",
+        "alt": "…or without Docker:"
+      },
+      "step2": {
+        "title": "Add your provider keys",
+        "desc": "Paste keys on the Keys page; the gateway mints one unified key in return:"
+      },
+      "step3": {
+        "title": "Point your clients at one endpoint",
+        "desc": "Any OpenAI-compatible client — or an Anthropic, Gemini or Ollama one — works unchanged.",
+        "alt": "\"model\": \"auto\" lets the router pick; any catalog model id pins that model."
+      }
+    },
+    "pricing": {
+      "kicker": "Pricing",
+      "title": "Honest pricing: the software is free",
+      "software": "The gateway itself",
+      "priceNote": "free, MIT-licensed, self-hosted",
+      "bulletSoftware": "The software is free and open source. Clone it, run it, fork it.",
+      "bulletInference": "Inference costs are your own provider keys — and the 44 bundled free-tier providers cost nothing.",
+      "bulletHosted": "If someone hosts a gateway for you, you settle inference with them through the customer portal at their published rate.",
+      "cta": "Create your account"
+    },
+    "footer": {
+      "license": "MIT License",
+      "navLabel": "Footer",
+      "apiDocs": "API reference"
+    }
   }
 }
