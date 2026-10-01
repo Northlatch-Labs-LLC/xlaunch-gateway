@@ -24,3 +24,16 @@ login `/` redirects to `/models/chat` (client/src/App.tsx:454). On a customer ho
 
 Counts: 5 HIGH, 4 MED, 3 LOW. Gaps 1-3 (and 12 for the landing) are addressed by
 this mission; 4-8, 10-11 are follow-up work scoped here, not fixed by it.
+
+## Closure ledger
+
+| Gap | Closed by | Commit | Notes |
+|-----|-----------|--------|-------|
+| 1-3, 12 | G1 | `1de8592` | Public landing at `/`, SEO meta, robots.txt, per-route titles |
+| 4, 6, 7, 10, 11 | G3.1 | `a1ecc80` | Signup-on-path, visible mode button, FieldError + role=alert, chain labels i18n, slim portal header |
+| 5 | G3.2 | `f9db400` | Email verification gates key/wallet creation; migration grandfathers existing rows verified |
+| 8 | G3.2 | `f9db400` | Enumeration-safe forgot-password; mailed path-form reset links, hashed single-use tokens |
+| 9 | G5 | `37be2e5` | docs/integrations/ — 10 client guides + index + troubleshooting, path-checked in npm test |
+
+All 12 gaps closed as of `37be2e5` (2026-10-01). Audit basis for reopen: any new
+route or surface added without docs lands here as a new row.
