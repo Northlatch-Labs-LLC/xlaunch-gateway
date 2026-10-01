@@ -24,6 +24,9 @@ import { useI18n } from '@/i18n'
 
 const GITHUB_URL = 'https://github.com/Northlatch-Labs-LLC/xlaunch-gateway'
 const API_DOCS_URL = '/v1/docs'
+// The in-repo markdown guides aren't served by the gateway (it only serves
+// the built client bundle), so the landing points at their home on GitHub.
+const INTEGRATION_GUIDES_URL = `${GITHUB_URL}/tree/main/docs/integrations`
 
 /** The wire formats the gateway speaks, as chips under the hero. */
 const WIRE_FORMATS = [
@@ -167,6 +170,17 @@ export default function LandingPage() {
               </li>
             ))}
           </ul>
+          <p className="mt-4 text-sm text-muted-foreground">
+            <a
+              href={INTEGRATION_GUIDES_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium text-foreground underline decoration-muted-foreground/40 underline-offset-4 transition-colors hover:decoration-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            >
+              {t('landing.formats.guides')}
+              <ArrowUpRight className="ms-1 inline size-3.5 align-[-2px]" aria-hidden="true" />
+            </a>
+          </p>
         </section>
 
         {/* Feature grid */}
@@ -261,6 +275,14 @@ export default function LandingPage() {
               className="transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             >
               {t('landing.footer.apiDocs')}
+            </a>
+            <a
+              href={INTEGRATION_GUIDES_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            >
+              {t('landing.footer.integrationGuides')}
             </a>
             <Link
               to="/portal"

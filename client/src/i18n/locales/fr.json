@@ -1138,7 +1138,8 @@
       "responses": "OpenAI Responses",
       "gemini": "Google Gemini",
       "ollama": "Ollama",
-      "mcp": "MCP"
+      "mcp": "MCP",
+      "guides": "Guides de configuration des clients"
     },
     "features": {
       "kicker": "Pourquoi Xlaunch Gateway",
@@ -1207,7 +1208,8 @@
     "footer": {
       "license": "Licence MIT",
       "navLabel": "Pied de page",
-      "apiDocs": "Référence API"
+      "apiDocs": "Référence API",
+      "integrationGuides": "Guides de configuration des clients"
     }
   }
 }
