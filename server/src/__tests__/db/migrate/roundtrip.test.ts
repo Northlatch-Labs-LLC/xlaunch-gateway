@@ -42,6 +42,7 @@ const CUSTOMER_ACCOUNTS_BILLING_FILENAME = '20260908_000002_customer_accounts_an
 const PASSWORD_RESET_AND_PLANS_FILENAME = '20260922_000001_password_reset_and_plans.ts';
 const SERVICE_CHARGES_FILENAME = '20260924_000001_service_charges.ts';
 const HARNESS_ACCESS_FILENAME = '20260928_000001_harness_access.ts';
+const EMAIL_VERIFICATION_FILENAME = '20261001_000001_email_verification.ts';
 
 interface SchemaRow {
   type: string;
@@ -130,6 +131,7 @@ describe('migration round trip', () => {
         PASSWORD_RESET_AND_PLANS_FILENAME,
         SERVICE_CHARGES_FILENAME,
         HARNESS_ACCESS_FILENAME,
+        EMAIL_VERIFICATION_FILENAME,
       ]);
     } finally {
       db.close();

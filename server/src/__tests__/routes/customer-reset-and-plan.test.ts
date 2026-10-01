@@ -8,6 +8,18 @@ const SERVICE_TOKEN = 't'.repeat(48);
 const EMAIL = 'reset@example.com';
 const PASSWORD = 'first-password-1';
 
+/** Mails the stubbed Resend transport "sent", so a test can read the one link
+ *  the API refuses to return. */
+const sent: { to: string; subject: string; text: string }[] = [];
+
+/** The reset link inside the most recent mailed text. */
+function resetLink(): string {
+  const match = [...sent].reverse().find(entry => entry.text.includes('/reset-password/'))
+    ?.text.match(/https:\/\/\S+\/reset-password\/\S+/);
+  if (match === undefined) throw new Error('no mailed reset link to read');
+  return match[0];
+}
+
 async function call(app: Express, method: string, path: string, body?: unknown, bearer?: string) {
   const server = app.listen(0, '127.0.0.1');
   if (!server.listening) await new Promise<void>(resolve => server.once('listening', () => resolve()));
@@ -29,27 +41,44 @@ describe('customer password reset', () => {
   let app: Express;
   beforeAll(() => {
     process.env.ENCRYPTION_KEY = '0'.repeat(64);
+    process.env.RESEND_API_KEY = 're_test_key';
+    process.env.SMTP_FROM = 'noreply@xlaunch.test';
+    process.env.XLAUNCH_PORTAL_URL = 'https://portal.test';
     initDb(':memory:');
     app = createApp();
     createCustomer(EMAIL, PASSWORD);
+    // Only Resend's endpoint is stubbed; the test's own HTTP still goes out.
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input).includes('api.resend.com')) {
+        const body = JSON.parse(String(init?.body)) as { to: string; subject: string; text: string };
+        sent.push(body);
+        return new Response('{}', { status: 200 });
+      }
+      return realFetch(input, init);
+    }) as typeof fetch;
   });
 
-  it('answers the same way whether or not the address is registered', async () => {
+  it('answers the same way whether or not the address is registered, and only mails the one that is', async () => {
     const known = await call(app, 'POST', '/customer-api/password-reset', { email: EMAIL });
-    const unknown = await call(app, 'POST', '/customer-api/password-reset', { email: 'nobody@example.com' });
     expect(known.status).toBe(200);
+
+    // The known one got a path-form link by mail — no token in a query string.
+    expect(resetLink()).toMatch(/^https:\/\/portal\.test\/reset-password\/[A-Za-z0-9_-]+$/);
+
+    sent.length = 0;
+    const unknown = await call(app, 'POST', '/customer-api/password-reset', { email: 'nobody@example.com' });
     expect(unknown.status).toBe(200);
-    expect(known.body?.message).toBe(unknown.body?.message);
-    expect(typeof known.body?.token).toBe('string');
-    expect(unknown.body?.token).toBeUndefined();
+    expect(known.body).toEqual(unknown.body);
+    expect(sent.length).toBe(0); // the unknown one mailed nothing
   });
 
   it('sets the new password once, signs the person in, and ends every older session', async () => {
     const older = createCustomerSession(1);
     expect((await call(app, 'GET', '/customer-api/me', undefined, older)).status).toBe(200);
 
-    const issued = await call(app, 'POST', '/customer-api/password-reset', { email: EMAIL });
-    const token = issued.body?.token as string;
+    await call(app, 'POST', '/customer-api/password-reset', { email: EMAIL });
+    const token = resetLink().split('/').pop() ?? '';
     const done = await call(app, 'POST', '/customer-api/password-reset/complete', { token, password: 'second-password-2' });
     expect(done.status).toBe(200);
     expect(done.body?.email).toBe(EMAIL);
@@ -65,8 +94,8 @@ describe('customer password reset', () => {
   });
 
   it('refuses an expired link, an unknown link, and a short password', async () => {
-    const issued = await call(app, 'POST', '/customer-api/password-reset', { email: EMAIL });
-    const token = issued.body?.token as string;
+    await call(app, 'POST', '/customer-api/password-reset', { email: EMAIL });
+    const token = resetLink().split('/').pop() ?? '';
     getDb().prepare('UPDATE customer_password_resets SET expires_at_ms = ?').run(Date.now() - 1);
     expect((await call(app, 'POST', '/customer-api/password-reset/complete', { token, password: 'fourth-password-4' })).status).toBe(410);
     expect((await call(app, 'POST', '/customer-api/password-reset/complete', { token: 'not-a-token', password: 'fourth-password-4' })).status).toBe(410);

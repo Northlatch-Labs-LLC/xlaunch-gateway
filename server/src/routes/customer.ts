@@ -20,13 +20,21 @@ import {
   createCustomerSession,
   createPasswordReset,
   deleteCustomerSession,
+  issueEmailVerification,
   validateCustomerSession,
   verifyCustomer,
+  verifyEmailToken,
   type CustomerSession,
 } from '../services/customer-auth.js';
 import { planFor } from '../services/customer-plan.js';
 import { mintHarnessAccess, verifyHarnessAccess } from '../services/harness-access.js';
-import { sendHarnessAccessMail } from '../services/mailer.js';
+import {
+  sendHarnessAccessMail,
+  sendPasswordResetMail,
+  sendSignupMail,
+  sendVerificationMail,
+} from '../services/mailer.js';
+import { createAdminRateLimiter } from '../middleware/rateLimit.js';
 import { balanceOf, ledgerFor, usdPerMillionTokens, billingEnabled } from '../services/billing.js';
 import { paymentConfig, normalizeSuiAddress } from '../services/payment-watcher.js';
 
@@ -104,17 +112,23 @@ customerRouter.post('/signup', (req: Request, res: Response) => {
   }
   try {
     const customer = createCustomer(parsed.data.email, parsed.data.password);
-    // The welcome mail carries the hosted-harness link, so a non-technical
-    // user's first access is the email they just got. Mail is fire-and-forget:
-    // a slow or down SMTP host must not delay or fail a signup that already
-    // succeeded, and the account page remains the way in either way.
+    // The address has to prove itself before wallets or API keys move, and the
+    // proof rides the welcome mail as a path-form link. Mail is
+    // fire-and-forget: a slow or down SMTP host must not delay or fail a
+    // signup that already succeeded, and the portal banner plus its resend
+    // button remain the way in either way.
+    const origin = portalOrigin();
+    const issued = issueEmailVerification(customer.id);
+    const verifyUrl = origin === null || !issued.ok
+      ? null
+      : `${origin}/verify-email/${issued.verification.token}`;
     const access = mintHarnessAccess(customer.id);
-    const origin = harnessOrigin();
-    const harnessAccessUrl = origin === null
+    const harnessOriginUrl = harnessOrigin();
+    const harnessAccessUrl = harnessOriginUrl === null
       ? undefined
-      : `${origin}/auth/access/${access.token}`;
-    if (harnessAccessUrl !== undefined) {
-      void sendHarnessAccessMail(customer.email, harnessAccessUrl).catch(() => undefined);
+      : `${harnessOriginUrl}/auth/access/${access.token}`;
+    if (verifyUrl !== null) {
+      void sendSignupMail(customer.email, verifyUrl, harnessAccessUrl ?? null).catch(() => undefined);
     }
     res.status(201).json({
       token: createCustomerSession(customer.id),
@@ -145,28 +159,100 @@ customerRouter.post('/login', (req: Request, res: Response) => {
   res.json({ token: createCustomerSession(customer.id), email: customer.email });
 });
 
+// Email verification. An unverified customer can sign in — the session is how
+// the portal shows them a banner and a resend button — but wallets and API
+// keys wait for the verified mark. The link is path-form, the token is stored
+// hashed, and the resend cooldown is 60 seconds per account, server-side.
+customerRouter.post(
+  '/email-verification/resend',
+  createAdminRateLimiter(20),
+  requireCustomer,
+  async (req: Request, res: Response) => {
+    const customer = current(req);
+    if (customer.emailVerified) {
+      res.json({ verified: true, sent: false });
+      return;
+    }
+    const origin = portalOrigin();
+    if (origin === null) {
+      res.status(503).json({ error: { message: 'The portal is not configured for emailed verification links yet' } });
+      return;
+    }
+    const issued = issueEmailVerification(customer.id);
+    if (!issued.ok) {
+      const retryAfter = Math.max(1, Math.ceil(issued.retryInMs / 1000));
+      res.setHeader('Retry-After', String(retryAfter));
+      res.status(429).json({
+        error: {
+          message: `A verification mail was just sent. Try again in ${String(retryAfter)} seconds.`,
+          type: 'rate_limit_error',
+        },
+      });
+      return;
+    }
+    const mail = await sendVerificationMail(
+      customer.email,
+      `${origin}/verify-email/${issued.verification.token}`,
+    );
+    res.json({ verified: false, sent: mail.sent, reason: mail.sent ? undefined : mail.reason });
+  },
+);
+
+// The mailed verification link lands here. Expired and already-used are told
+// apart on purpose: both are dead ends, but only one is worth asking for a new
+// link over. Nothing in the answer reveals anything beyond the token itself.
+customerRouter.get('/verify-email/:token', (req: Request, res: Response) => {
+  const token = String(req.params.token ?? '');
+  const outcome = token.length === 0 || token.length > 200
+    ? { ok: false as const, failure: 'invalid' as const }
+    : verifyEmailToken(token);
+  if (!outcome.ok) {
+    const said = {
+      invalid: 'This verification link is not valid. Ask for a new one from your account.',
+      expired: 'This verification link has expired. Ask for a new one from your account.',
+      used: 'This verification link has already been used. Your email is verified.',
+    }[outcome.failure];
+    res.status(410).json({ error: { message: said } });
+    return;
+  }
+  res.json({ ok: true, email: outcome.customer.email });
+});
+
 // A forgotten password, without an operator on the server.
 //
 // Both routes answer the same way whether or not the address is registered.
 // An endpoint that distinguishes them is a way to ask this gateway which of a
-// list of addresses has an account here.
-//
-// The token is returned in the response rather than emailed, because this
-// gateway sends no mail. The surface in front of it decides how it reaches the
-// person; until one does, an operator reads it from here and hands it over.
-customerRouter.post('/password-reset', (req: Request, res: Response) => {
-  const parsed = z.object({ email: z.string().trim().email().max(200) }).safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: { message: 'A valid email is required' } });
-    return;
-  }
-  const reset = createPasswordReset(parsed.data.email);
-  const answer = {
-    success: true,
-    message: 'If that address has an account, a reset has been issued.',
-  };
-  res.json(reset === null ? answer : { ...answer, token: reset.token, expiresAtMs: reset.expiresAtMs });
-});
+// list of addresses has an account here. The reset link is mailed, never
+// returned: a token handed to whoever asks would let anyone reset any
+// account's password, and the response must carry nothing that differs
+// between a registered and an unregistered address.
+customerRouter.post(
+  '/password-reset',
+  createAdminRateLimiter(20),
+  async (req: Request, res: Response) => {
+    const parsed = z.object({ email: z.string().trim().email().max(200) }).safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: { message: 'A valid email is required' } });
+      return;
+    }
+    const reset = createPasswordReset(parsed.data.email);
+    if (reset !== null) {
+      const origin = portalOrigin();
+      if (origin !== null) {
+        // A failed send must not change the answer: the person is told a mail
+        // may have gone out either way, and the reason only reaches the logs.
+        await sendPasswordResetMail(
+          parsed.data.email,
+          `${origin}/reset-password/${reset.token}`,
+        ).catch(() => undefined);
+      }
+    }
+    res.json({
+      success: true,
+      message: 'If that address has an account, a reset link has been mailed to it.',
+    });
+  },
+);
 
 customerRouter.post('/password-reset/complete', (req: Request, res: Response) => {
   const parsed = z.object({
@@ -208,6 +294,7 @@ customerRouter.get('/me', requireCustomer, (req: Request, res: Response) => {
   const config = paymentConfig();
   res.json({
     email: customer.email,
+    emailVerified: customer.emailVerified,
     balanceMicros: balanceOf(customer.id),
     billingEnabled: billingEnabled(),
     usdPerMillionTokens: usdPerMillionTokens(),
@@ -231,6 +318,12 @@ customerRouter.get('/wallets', requireCustomer, (req: Request, res: Response) =>
 });
 
 customerRouter.post('/wallets', requireCustomer, (req: Request, res: Response) => {
+  // Money moves against wallets, so an unverified address — which is only a
+  // string someone typed at signup — cannot register one.
+  if (!current(req).emailVerified) {
+    res.status(403).json({ error: { message: 'Verify your email before registering a wallet' } });
+    return;
+  }
   const parsed = walletSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: { message: 'A chain and a wallet address are required' } });
@@ -314,6 +407,12 @@ customerRouter.get('/keys', requireCustomer, (req: Request, res: Response) => {
 });
 
 customerRouter.post('/keys', requireCustomer, (req: Request, res: Response) => {
+  // A key is a credential: it leaves with whoever asks, so it waits for a
+  // verified address the same way a wallet does.
+  if (!current(req).emailVerified) {
+    res.status(403).json({ error: { message: 'Verify your email before creating an API key' } });
+    return;
+  }
   const parsed = keySchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: { message: 'A key name is required' } });
@@ -359,6 +458,24 @@ customerRouter.delete('/keys/:id', requireCustomer, (req: Request, res: Response
  *  surface that knows its own address composes the URL itself. */
 function harnessOrigin(): string | null {
   const raw = process.env.XLAUNCH_HARNESS_URL;
+  if (!raw) return null;
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
+    return raw.replace(/\/+$/, '');
+  } catch {
+    return null;
+  }
+}
+
+/** Where the customer portal lives, for building mailed account-action links
+ *  (verify the address, reset the password). Links are path-form —
+ *  `/verify-email/<token>`, `/reset-password/<token>` — so no mail client can
+ *  truncate a query string off the credential. Optional: without it no mailed
+ *  link can be built, and each endpoint says so honestly rather than mailing a
+ *  link to nowhere. */
+function portalOrigin(): string | null {
+  const raw = process.env.XLAUNCH_PORTAL_URL;
   if (!raw) return null;
   try {
     const url = new URL(raw);

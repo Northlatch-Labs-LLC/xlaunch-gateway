@@ -37,6 +37,7 @@ import * as customerAccountsAndBilling from '../migrations/20260908_000002_custo
 import * as passwordResetAndPlans from '../migrations/20260922_000001_password_reset_and_plans.js';
 import * as serviceCharges from '../migrations/20260924_000001_service_charges.js';
 import * as harnessAccess from '../migrations/20260928_000001_harness_access.js';
+import * as emailVerification from '../migrations/20261001_000001_email_verification.js';
 
 export interface MigrationModule {
   up(db: Db): void;
@@ -86,6 +87,7 @@ export const CUSTOMER_ACCOUNTS_BILLING_FILENAME = '20260908_000002_customer_acco
 export const PASSWORD_RESET_AND_PLANS_FILENAME = '20260922_000001_password_reset_and_plans.ts';
 export const SERVICE_CHARGES_FILENAME = '20260924_000001_service_charges.ts';
 export const HARNESS_ACCESS_FILENAME = '20260928_000001_harness_access.ts';
+export const EMAIL_VERIFICATION_FILENAME = '20261001_000001_email_verification.ts';
 
 export const DEFAULT_MIGRATIONS: readonly DefaultMigration[] = [
   { filename: LEGACY_BASELINE_FILENAME, module: legacyBaseline },
@@ -126,4 +128,5 @@ export const DEFAULT_MIGRATIONS: readonly DefaultMigration[] = [
   { filename: PASSWORD_RESET_AND_PLANS_FILENAME, module: passwordResetAndPlans },
   { filename: SERVICE_CHARGES_FILENAME, module: serviceCharges },
   { filename: HARNESS_ACCESS_FILENAME, module: harnessAccess },
+  { filename: EMAIL_VERIFICATION_FILENAME, module: emailVerification },
 ];

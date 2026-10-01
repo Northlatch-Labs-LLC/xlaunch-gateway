@@ -42,6 +42,7 @@ const API_DOCS_URL = '/v1/docs'
 
 interface Account {
   email: string
+  emailVerified: boolean
   balanceMicros: number
   billingEnabled: boolean
   usdPerMillionTokens: number
@@ -230,6 +231,14 @@ function SignedOut({ onSignedIn }: { onSignedIn: () => void }) {
         >
           {mode === 'login' ? t('portal.createAccount') : t('portal.signIn')}
         </Link>
+        {mode === 'login' && (
+          <Link
+            to={`${modeBase}/forgot-password`}
+            className="mt-3 block text-center text-xs text-muted-foreground underline-offset-4 transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >
+            {t('portal.forgotPassword')}
+          </Link>
+        )}
       </Panel>
       </div>
     </div>
@@ -272,6 +281,18 @@ function SignedIn({ onSignedOut }: { onSignedOut: () => void }) {
     onSuccess: () => refresh(['portal-keys']),
   })
 
+  // The server owns the 60s cooldown and says so in the 429; the banner shows
+  // its message rather than counting seconds twice.
+  const resendVerification = useMutation({
+    mutationFn: () => customerFetch<{ sent: boolean; reason?: string }>('/email-verification/resend', { method: 'POST' }),
+    onSuccess: (result) => {
+      toast.success(result.sent ? t('portal.verificationSent') : t('portal.errorUnexpected'))
+    },
+    onError: (err: unknown) => {
+      toast.error(err instanceof Error && err.message ? err.message : t('portal.errorUnexpected'))
+    },
+  })
+
   const signOut = (): void => {
     void customerFetch('/logout', { method: 'POST' }).catch(() => {
       // The local session is cleared either way; a failed revoke only leaves a
@@ -294,6 +315,21 @@ function SignedIn({ onSignedOut }: { onSignedOut: () => void }) {
           <LogOut className="size-3.5 mr-1.5" />{t('portal.signOut')}
         </Button>
       </header>
+
+      {account?.emailVerified === false && (
+        <div role="alert" className="rounded-2xl border border-amber-500/40 bg-amber-500/5 px-4 py-3 space-y-2">
+          <p className="text-sm font-medium">{t('portal.verifyBannerTitle')}</p>
+          <p className="text-xs text-muted-foreground">{t('portal.verifyBannerBody')}</p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => resendVerification.mutate()}
+            disabled={resendVerification.isPending}
+          >
+            {t('portal.resendVerification')}
+          </Button>
+        </div>
+      )}
 
       <Panel title={t('portal.balance')} description={t('portal.balanceDesc')}>
         <div className="flex items-baseline gap-3">
@@ -451,10 +487,251 @@ function SignedIn({ onSignedOut }: { onSignedOut: () => void }) {
   )
 }
 
-/** The portal route. */
+/** The signed-out "I forgot my password" request form. The server answers the
+ *  same way whether or not the address is registered, so this surface does
+ *  too: one honest sentence, shown either way. */
+function ForgotPassword() {
+  const { t } = useI18n()
+  const location = useLocation()
+  const modeBase = location.pathname.startsWith('/portal') ? '/portal' : ''
+  const [email, setEmail] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [sent, setSent] = useState(false)
+  const [attempted, setAttempted] = useState(false)
+
+  const emailError = !email.trim() ? t('validation.required') : !isEmail(email) ? t('validation.email') : null
+
+  const submit = useMutation({
+    mutationFn: () => customerFetch('/password-reset', {
+      method: 'POST',
+      body: JSON.stringify({ email: email.trim() }),
+    }),
+    meta: { silenceToast: true },
+    onSuccess: () => setSent(true),
+    onError: () => setError(t('portal.errorUnexpected')),
+  })
+
+  return (
+    <div className="min-h-screen">
+      {isCustomerHost() && <PortalHostHeader />}
+      <div className="mx-auto max-w-sm py-16">
+      <Panel title={t('portal.forgotTitle')} description={t('portal.forgotDesc')}>
+        {sent
+          ? (
+            <div className="space-y-3">
+              <p role="status" className="text-xs text-muted-foreground">{t('portal.forgotSent')}</p>
+              <Link to={`${modeBase}/signin`} className={`${buttonVariants({ variant: 'outline' })} w-full`}>
+                {t('portal.backToSignIn')}
+              </Link>
+            </div>
+          )
+          : (
+            <form
+              className="space-y-3"
+              noValidate
+              onSubmit={(e) => {
+                e.preventDefault()
+                if (emailError) { setAttempted(true); return }
+                submit.mutate()
+              }}
+            >
+              <div className="space-y-1.5">
+                <Label className="text-xs" htmlFor="forgot-email">{t('portal.email')}</Label>
+                <Input
+                  id="forgot-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder={t('portal.emailPlaceholder')}
+                  autoComplete="email"
+                  aria-invalid={attempted && !!emailError}
+                />
+                {attempted && <FieldError error={emailError} />}
+                {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
+              </div>
+              <Button type="submit" className="w-full" disabled={submit.isPending}>
+                {t('portal.forgotSubmit')}
+              </Button>
+              <Link
+                to={`${modeBase}/signin`}
+                className="block text-center text-xs text-muted-foreground underline-offset-4 transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              >
+                {t('portal.backToSignIn')}
+              </Link>
+            </form>
+          )}
+      </Panel>
+      </div>
+    </div>
+  )
+}
+
+/** The mailed reset link lands here: one password, confirmed once, and the
+ *  server signs the person straight in on success. A dead link says so and
+ *  offers the way back to asking for a new one. */
+function ResetPassword({ token }: { token: string }) {
+  const { t } = useI18n()
+  const location = useLocation()
+  const modeBase = location.pathname.startsWith('/portal') ? '/portal' : ''
+  const [password, setPassword] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [attempted, setAttempted] = useState(false)
+  const [done, setDone] = useState(false)
+
+  const passwordError = !password
+    ? t('validation.required')
+    : password.length < PASSWORD_MIN
+      ? t('validation.passwordMin', { min: PASSWORD_MIN })
+      : null
+  const confirmError = !confirm ? t('validation.required') : confirm !== password ? t('portal.passwordMismatch') : null
+
+  const submit = useMutation({
+    mutationFn: () => customerFetch<{ token: string }>('/password-reset/complete', {
+      method: 'POST',
+      body: JSON.stringify({ token, password }),
+    }),
+    meta: { silenceToast: true },
+    onSuccess: (result) => {
+      setCustomerToken(result.token)
+      setDone(true)
+    },
+    // Expired, used, and invalid links are honest dead ends; the message says
+    // which, and the re-request link below is the way forward.
+    onError: (err: unknown) => {
+      setError(err instanceof Error && err.message ? err.message : t('portal.errorUnexpected'))
+    },
+  })
+
+  return (
+    <div className="min-h-screen">
+      {isCustomerHost() && <PortalHostHeader />}
+      <div className="mx-auto max-w-sm py-16">
+      <Panel title={t('portal.resetTitle')}>
+        {done
+          ? (
+            <div className="space-y-3">
+              <p role="status" className="text-xs text-muted-foreground">{t('portal.resetDone')}</p>
+              <Link to={`${modeBase}/signin`} className={`${buttonVariants()} w-full`}>
+                {t('portal.resetContinue')}
+              </Link>
+            </div>
+          )
+          : (
+            <form
+              className="space-y-3"
+              noValidate
+              onSubmit={(e) => {
+                e.preventDefault()
+                if (passwordError || confirmError) { setAttempted(true); return }
+                submit.mutate()
+              }}
+            >
+              <div className="space-y-1.5">
+                <Label className="text-xs" htmlFor="reset-password">{t('portal.newPassword')}</Label>
+                <Input
+                  id="reset-password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={t('portal.passwordPlaceholder')}
+                  autoComplete="new-password"
+                  aria-invalid={attempted && !!passwordError}
+                />
+                {attempted && <FieldError error={passwordError} />}
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs" htmlFor="reset-confirm">{t('portal.confirmPassword')}</Label>
+                <Input
+                  id="reset-confirm"
+                  type="password"
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  placeholder={t('portal.passwordPlaceholder')}
+                  autoComplete="new-password"
+                  aria-invalid={attempted && !!confirmError}
+                />
+                {attempted && <FieldError error={confirmError} />}
+              </div>
+              {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
+              <Button type="submit" className="w-full" disabled={submit.isPending}>
+                {t('portal.resetSubmit')}
+              </Button>
+              <Link
+                to={`${modeBase}/forgot-password`}
+                className="block text-center text-xs text-muted-foreground underline-offset-4 transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              >
+                {t('portal.resetRequestNew')}
+              </Link>
+            </form>
+          )}
+      </Panel>
+      </div>
+    </div>
+  )
+}
+
+/** The emailed verification link lands here. It asks the gateway the moment it
+ *  mounts and shows one of two honest answers: verified, or a dead link with
+ *  the way to ask for a new one (the signed-in portal's resend button). */
+function VerifyEmail({ token }: { token: string }) {
+  const { t } = useI18n()
+  const location = useLocation()
+  const modeBase = location.pathname.startsWith('/portal') ? '/portal' : ''
+
+  const verify = useQuery({
+    queryKey: ['portal-verify-email', token],
+    queryFn: () => customerFetch(`/verify-email/${token}`),
+    retry: false,
+    staleTime: Infinity,
+  })
+
+  return (
+    <div className="min-h-screen">
+      {isCustomerHost() && <PortalHostHeader />}
+      <div className="mx-auto max-w-sm py-16">
+      <Panel title={t('portal.verifyTitle')}>
+        {verify.isPending && <p className="text-xs text-muted-foreground">…</p>}
+        {verify.isSuccess && (
+          <div className="space-y-3">
+            <p role="status" className="text-xs text-muted-foreground">{t('portal.verifyDone')}</p>
+            <Link to={`${modeBase}/signin`} className={`${buttonVariants()} w-full`}>
+              {t('portal.signIn')}
+            </Link>
+          </div>
+        )}
+        {verify.isError && (
+          <div className="space-y-3">
+            <p role="alert" className="text-xs text-destructive">
+              {verify.error instanceof Error && verify.error.message ? verify.error.message : t('portal.verifyFailed')}
+            </p>
+            <Link to={`${modeBase}/signin`} className={`${buttonVariants({ variant: 'outline' })} w-full`}>
+              {t('portal.signIn')}
+            </Link>
+          </div>
+        )}
+      </Panel>
+      </div>
+    </div>
+  )
+}
+
+/** The portal route. One component serves every portal path — on the customer's
+ *  own hostname the portal IS the site, so it meets /signin, /signup,
+ *  /forgot-password, /reset-password/<token> and /verify-email/<token> at the
+ *  root, and the same paths again under /portal on the operator's host. */
 export default function PortalPage() {
+  const location = useLocation()
   const [signedIn, setSignedIn] = useState(() => getCustomerToken() !== null)
-  return signedIn
-    ? <SignedIn onSignedOut={() => setSignedIn(false)} />
-    : <SignedOut onSignedIn={() => setSignedIn(true)} />
+
+  // Strip the operator-host /portal prefix, so the same matchers serve both.
+  const base = location.pathname.replace(/^\/portal(?=\/|$)/, '')
+  const resetToken = base.match(/^\/reset-password\/([^/]+)$/)?.[1]
+  const verifyToken = base.match(/^\/verify-email\/([^/]+)$/)?.[1]
+
+  if (resetToken !== undefined) return <ResetPassword token={resetToken} />
+  if (verifyToken !== undefined) return <VerifyEmail token={verifyToken} />
+  if (signedIn) return <SignedIn onSignedOut={() => setSignedIn(false)} />
+  if (base === '/forgot-password') return <ForgotPassword />
+  return <SignedOut onSignedIn={() => setSignedIn(true)} />
 }
