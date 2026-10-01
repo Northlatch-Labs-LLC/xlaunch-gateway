@@ -1,16 +1,22 @@
 import { useState } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Copy, LogOut, Plus, Trash2, Wallet } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { ArrowUpRight, Copy, LogOut, Plus, Trash2, Wallet } from 'lucide-react'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { FieldError } from '@/components/ui/field-error'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ConfirmButton } from '@/components/confirm-button'
 import { copyText } from '@/lib/clipboard'
 import { toast } from '@/lib/toast'
+import { isCustomerHost } from '@/lib/host'
+import { isEmail } from '@/lib/validate'
 import { useI18n } from '@/i18n'
 import {
   clearCustomerToken,
   customerFetch,
+  type CustomerApiError,
   formatUsd,
   getCustomerToken,
   setCustomerToken,
@@ -23,10 +29,16 @@ import {
 
 /** Chains a customer may register a paying wallet on. */
 const CHAINS = [
-  { value: 'sui', label: 'Sui (SUI)' },
-  { value: 'base', label: 'Base (USDC)' },
-  { value: 'ethereum', label: 'Ethereum (USDC)' },
+  { value: 'sui', labelKey: 'portal.chainSui' },
+  { value: 'base', labelKey: 'portal.chainBase' },
+  { value: 'ethereum', labelKey: 'portal.chainEthereum' },
 ] as const
+
+// Matches the server rule (services/customer-auth.ts MIN_PASSWORD_LENGTH).
+const PASSWORD_MIN = 10
+
+// The docs link in the slim portal header; same target as the landing's.
+const API_DOCS_URL = '/v1/docs'
 
 interface Account {
   email: string
@@ -81,13 +93,62 @@ function AddressRow({ label, value }: { label: string; value: string }) {
   )
 }
 
+/**
+ * The slim product header, shown only on the customer's own hostname where a
+ * stranger arrives with no context: logo, one line of what this is, and a
+ * way to the docs. The operator's /portal keeps the dashboard chrome off it.
+ */
+function PortalHostHeader() {
+  const { t } = useI18n()
+  return (
+    <header className="border-b">
+      <div className="mx-auto flex w-full max-w-6xl items-center gap-3 px-4 py-3 sm:px-6">
+        <span className="flex items-center gap-2">
+          <span className="inline-block size-2 rounded-full bg-foreground" />
+          <span className="text-sm font-semibold tracking-tight">Xlaunch Gateway</span>
+        </span>
+        <p className="hidden min-w-0 flex-1 truncate text-xs text-muted-foreground sm:block">
+          {t('portal.headerTagline')}
+        </p>
+        <a
+          href={API_DOCS_URL}
+          className="ms-auto inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:ms-0"
+        >
+          {t('landing.footer.apiDocs')}
+          <ArrowUpRight className="size-3.5" aria-hidden="true" />
+        </a>
+      </div>
+    </header>
+  )
+}
+
 /** Sign-in and sign-up, shown until a customer session exists. */
 function SignedOut({ onSignedIn }: { onSignedIn: () => void }) {
   const { t } = useI18n()
-  const [mode, setMode] = useState<'login' | 'signup'>('login')
+  const location = useLocation()
+  // The path carries the mode, so a landing "Create your account" link can
+  // aim a stranger straight at the signup form: /portal/signup on the
+  // dashboard host, /signup on the customer's own hostname.
+  const mode = location.pathname.endsWith('/signup') ? 'signup' : 'login'
+  const modeBase = location.pathname.startsWith('/portal') ? '/portal' : ''
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [attempted, setAttempted] = useState(false)
+
+  // Inline field feedback, the auth-gate pattern; the server stays
+  // authoritative. Login only checks presence — an existing password of any
+  // length must still sign in.
+  const emailError = !email.trim()
+    ? t('validation.required')
+    : !isEmail(email)
+      ? t('validation.email')
+      : null
+  const passwordError = !password
+    ? t('validation.required')
+    : mode === 'signup' && password.length < PASSWORD_MIN
+      ? t('validation.passwordMin', { min: PASSWORD_MIN })
+      : null
 
   const submit = useMutation({
     mutationFn: () => customerFetch<{ token: string }>(`/${mode}`, {
@@ -100,48 +161,77 @@ function SignedOut({ onSignedIn }: { onSignedIn: () => void }) {
       setError(null)
       onSignedIn()
     },
-    onError: (err: unknown) => setError(err instanceof Error ? err.message : String(err)),
+    onError: (err: unknown) => {
+      // Map the statuses this surface actually produces to honest messages;
+      // anything else still shows the server's own words, never silence.
+      const status = (err as CustomerApiError).status
+      if (status === 401) setError(t('portal.errorInvalidCredentials'))
+      else if (status === 409) setError(t('portal.errorEmailTaken'))
+      else if (status === 400) setError(t('portal.errorInvalidInput'))
+      else setError(err instanceof Error && err.message ? err.message : t('portal.errorUnexpected'))
+    },
   })
 
   return (
-    <div className="mx-auto max-w-sm py-16">
+    <div className="min-h-screen">
+      {isCustomerHost() && <PortalHostHeader />}
+      <div className="mx-auto max-w-sm py-16">
       <Panel
         title={mode === 'login' ? t('portal.signIn') : t('portal.createAccount')}
         description={mode === 'login' ? t('portal.signInDesc') : t('portal.createAccountDesc')}
       >
         <form
           className="space-y-3"
-          onSubmit={(e) => { e.preventDefault(); if (email.trim() && password) submit.mutate() }}
+          noValidate
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (emailError || passwordError) { setAttempted(true); return }
+            submit.mutate()
+          }}
         >
-          <Input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder={t('portal.emailPlaceholder')}
-            aria-label={t('portal.email')}
-            autoComplete="email"
-          />
-          <Input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder={t('portal.passwordPlaceholder')}
-            aria-label={t('portal.password')}
-            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-          />
-          {error && <p className="text-xs text-destructive">{error}</p>}
-          <Button type="submit" className="w-full" disabled={!email.trim() || !password || submit.isPending}>
+          <div className="space-y-1.5">
+            <Label className="text-xs" htmlFor="portal-email">{t('portal.email')}</Label>
+            <Input
+              id="portal-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={t('portal.emailPlaceholder')}
+              autoComplete="email"
+              aria-invalid={attempted && !!emailError}
+            />
+            {attempted && <FieldError error={emailError} />}
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs" htmlFor="portal-password">{t('portal.password')}</Label>
+            <Input
+              id="portal-password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder={t('portal.passwordPlaceholder')}
+              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+              aria-invalid={attempted && !!passwordError}
+            />
+            {attempted && <FieldError error={passwordError} />}
+          </div>
+          {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
+          <Button type="submit" className="w-full" disabled={submit.isPending}>
             {mode === 'login' ? t('portal.signIn') : t('portal.createAccount')}
           </Button>
         </form>
-        <button
-          type="button"
-          className="text-xs text-muted-foreground underline"
-          onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(null) }}
+        {/* The other mode is a visible, equal-weight action from first paint —
+            not a text toggle — and navigating between the mode paths keeps this
+            component (and the typed email) mounted. */}
+        <Link
+          to={mode === 'login' ? `${modeBase}/signup` : `${modeBase}/signin`}
+          className={`${buttonVariants({ variant: 'outline' })} mt-3 w-full`}
+          onClick={() => { setError(null); setAttempted(false) }}
         >
-          {mode === 'login' ? t('portal.needAccount') : t('portal.haveAccount')}
-        </button>
+          {mode === 'login' ? t('portal.createAccount') : t('portal.signIn')}
+        </Link>
       </Panel>
+      </div>
     </div>
   )
 }
@@ -260,7 +350,7 @@ function SignedIn({ onSignedOut }: { onSignedOut: () => void }) {
           <Select value={chain} onValueChange={(value) => setChain(value ?? "base")}>
             <SelectTrigger className="w-40" aria-label={t('portal.chain')}><SelectValue /></SelectTrigger>
             <SelectContent>
-              {CHAINS.map(entry => <SelectItem key={entry.value} value={entry.value}>{entry.label}</SelectItem>)}
+              {CHAINS.map(entry => <SelectItem key={entry.value} value={entry.value}>{t(entry.labelKey)}</SelectItem>)}
             </SelectContent>
           </Select>
           <Input

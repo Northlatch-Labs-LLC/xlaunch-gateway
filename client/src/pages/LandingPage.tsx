@@ -147,7 +147,7 @@ export default function LandingPage() {
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Link
-              to="/portal"
+              to="/portal/signup"
               className={buttonVariants({ size: 'lg', className: 'h-10 px-5 text-base' })}
             >
               {t('landing.hero.ctaPrimary')}
@@ -231,7 +231,7 @@ export default function LandingPage() {
               </li>
             </ul>
             <Link
-              to="/portal"
+              to="/portal/signup"
               className={buttonVariants({ size: 'lg', className: 'mt-8 h-10 px-5 text-base' })}
             >
               {t('landing.pricing.cta')}

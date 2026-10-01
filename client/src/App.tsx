@@ -22,6 +22,7 @@ import { SettingsDialog } from '@/components/settings-dialog'
 import { Toaster } from '@/components/toaster'
 import { I18nProvider, useI18n } from '@/i18n'
 import { logout } from '@/lib/api'
+import { isCustomerHost } from '@/lib/host'
 import { toast } from '@/lib/toast'
 import { ThemeProvider } from '@/theme'
 import KeysPage from '@/pages/KeysPage'
@@ -395,17 +396,7 @@ function AppShell({ children }: { children: ReactNode }) {
   )
 }
 
-/**
- * Whether this browser is on the customer's hostname rather than the operator's.
- *
- * By hostname and not by build flag: one image serves both, and a flag would mean two builds that
- * can disagree. `portal.` is the customer prefix; anything else — the operator's SSH tunnel on
- * localhost included — is the dashboard.
- */
-function isCustomerHost(): boolean {
-  if (typeof window === 'undefined') return false
-  return window.location.hostname.split('.')[0] === 'portal'
-}
+// (isCustomerHost now lives in lib/host.ts, shared with the portal page.)
 
 function App() {
   return (

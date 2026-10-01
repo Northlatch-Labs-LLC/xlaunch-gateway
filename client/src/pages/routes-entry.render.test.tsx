@@ -9,6 +9,7 @@ import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MemoryRouter } from 'react-router-dom'
 import { I18nProvider } from '@/i18n/I18nProvider'
 import { AuthGate } from '@/components/auth-gate'
 import PortalPage from '@/pages/PortalPage'
@@ -56,23 +57,46 @@ describe('/admin renders the operator login', () => {
 })
 
 describe('/portal renders the customer portal', () => {
-  it('shows the portal sign-in card with a signup toggle when signed out', async () => {
-    localStorage.clear() // no customer token
-    const queryClient = new QueryClient()
-    await act(async () => {
+  // The signed-out card now derives its mode from the path, so it needs a
+  // router; the same MemoryRouter stands in for BrowserRouter here.
+  function renderAt(path: string, queryClient: QueryClient): Promise<void> {
+    return act(async () => {
       root!.render(
         <QueryClientProvider client={queryClient}>
           <I18nProvider initialLocale="en">
-            <PortalPage />
+            <MemoryRouter key={path} initialEntries={[path]}>
+              <PortalPage />
+            </MemoryRouter>
           </I18nProvider>
         </QueryClientProvider>,
       )
     })
+  }
+
+  it('shows the sign-in card with a visible Create account action when signed out', async () => {
+    localStorage.clear() // no customer token
+    const queryClient = new QueryClient()
+    await renderAt('/portal', queryClient)
     const text = document.body.textContent ?? ''
     expect(text).toContain('Sign in')
-    expect(text).toContain('Need an account? Create one')
+    // Gap 4: signup is a visible, equal-weight action from first paint, not
+    // a text toggle — and it aims at the signup path.
+    expect(text).toContain('Create account')
+    const signup = document.querySelector<HTMLAnchorElement>('a[href="/portal/signup"]')
+    expect(signup).not.toBeNull()
     expect(document.querySelectorAll('input[type="email"]')).toHaveLength(1)
     expect(document.querySelectorAll('input[type="password"]')).toHaveLength(1)
+  })
+
+  it('lands a /portal/signup visitor directly in signup mode', async () => {
+    localStorage.clear()
+    const queryClient = new QueryClient()
+    await renderAt('/portal/signup', queryClient)
+    const text = document.body.textContent ?? ''
+    expect(text).toContain('Create an account to get an API key')
+    // The other mode stays one visible action away, email preserved.
+    const backToSignIn = document.querySelector<HTMLAnchorElement>('a[href="/portal/signin"]')
+    expect(backToSignIn).not.toBeNull()
   })
 })
 
