@@ -2,10 +2,12 @@ import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import { SUPPORTED_LOCALES } from '../i18n/locale-config'
 
 // The chain manager is the dashboard surface for named fallback chains
 // (#960/#895). Two things about it are easy to break by accident and are
-// pinned here: every string it renders has to exist in all 60 locales, and it
+// pinned here: every string it renders has to exist in every shipped locale,
+// and it
 // has to stay a secondary panel on the Fallback page rather than growing into
 // its own nav entry — one chain is all most installs ever use.
 const here = path.dirname(fileURLToPath(import.meta.url))
@@ -34,10 +36,14 @@ const locales = readdirSync(localeDir)
 const usedKeys = [...source.matchAll(/\bt\('([^']+)'/g)].map(match => match[1])
 
 describe('chain manager', () => {
-  it('calls only keys that exist in every locale', () => {
+  it('calls only keys that exist in every shipped locale', () => {
     expect(usedKeys.length).toBeGreaterThan(5)
     expect(usedKeys).toContain('chains.title')
-    expect(locales.length).toBeGreaterThan(50)
+    // The locale files on disk must be exactly the set locale-config ships:
+    // a locale added there joins this check, a stray or deleted file fails it.
+    expect([...locales].sort(), `locale files on disk: ${locales.join(', ')}`).toEqual([
+      ...SUPPORTED_LOCALES,
+    ].sort())
 
     for (const name of locales) {
       const dictionary = locale(name)

@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import { SUPPORTED_LOCALES } from '../i18n/locale-config'
 
 // #801: the agent cards showed only a wire protocol and a base-URL suffix,
 // which says nothing about what any of these tools actually is. The cards now
@@ -39,12 +40,16 @@ describe('agent card descriptions', () => {
     expect(english.crush).not.toMatch(/VS Code/)
   })
 
-  it('carries the same description ids in all 60 locales', () => {
+  it('carries the same description ids in every shipped locale', () => {
     const expected = Object.keys(descriptions('en')).sort()
     const locales = readdirSync(localeDir)
       .filter(name => name.endsWith('.json'))
       .map(name => name.slice(0, -5))
-    expect(locales.length).toBe(60)
+    // The locale files on disk must be exactly the set locale-config ships:
+    // a locale added there joins this check, a stray or deleted file fails it.
+    expect([...locales].sort(), `locale files on disk: ${locales.join(', ')}`).toEqual([
+      ...SUPPORTED_LOCALES,
+    ].sort())
     for (const locale of locales) {
       expect(Object.keys(descriptions(locale)).sort(), locale).toEqual(expected)
     }

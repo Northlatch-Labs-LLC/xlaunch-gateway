@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import { SUPPORTED_LOCALES } from '../i18n/locale-config'
 
 // #870: RPM/RPD/TPM/TPD were bare acronyms sharing one generic hint
 // ("Leave blank for no limit."), so nothing on screen said what they stood
@@ -33,8 +34,12 @@ describe('rate-limit field hints', () => {
     expect(source).not.toContain("t('models.limitHint')")
   })
 
-  it('translates all four hints in every locale, and keeps them distinct', () => {
-    expect(locales.length).toBeGreaterThan(50)
+  it('translates all four hints in every shipped locale, and keeps them distinct', () => {
+    // The locale files on disk must be exactly the set locale-config ships:
+    // a locale added there joins this check, a stray or deleted file fails it.
+    expect([...locales].sort(), `locale files on disk: ${locales.join(', ')}`).toEqual([
+      ...SUPPORTED_LOCALES,
+    ].sort())
     for (const locale of locales) {
       const strings = models(locale)
       const values = FIELDS.map(field => strings[`limit${field}Hint`])

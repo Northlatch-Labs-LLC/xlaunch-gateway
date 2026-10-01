@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import { SUPPORTED_LOCALES } from '../i18n/locale-config'
 
 // The Routing strategy card opens on the strategy pills and nothing else. The
 // secondary knobs added since (key selection, exploration, peak hours) sit
@@ -20,8 +21,12 @@ const locales = readdirSync(localeDir)
 const disclosureStart = page.indexOf('{!optionsCollapsed && (')
 
 describe('routing strategy "More options" disclosure', () => {
-  it('has its label in every locale', () => {
-    expect(locales.length).toBeGreaterThan(50)
+  it('has its label in every shipped locale', () => {
+    // The locale files on disk must be exactly the set locale-config ships:
+    // a locale added there joins this check, a stray or deleted file fails it.
+    expect([...locales].sort(), `locale files on disk: ${locales.join(', ')}`).toEqual([
+      ...SUPPORTED_LOCALES,
+    ].sort())
     for (const name of locales) {
       const dictionary = JSON.parse(readFileSync(path.join(localeDir, `${name}.json`), 'utf8'))
       expect(typeof dictionary.strategies.moreOptions, `${name} is missing strategies.moreOptions`)

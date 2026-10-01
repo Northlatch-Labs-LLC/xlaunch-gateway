@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import { SUPPORTED_LOCALES } from '../i18n/locale-config'
 
 // #891: the capability-tier tooltip claimed an unrecognized tier "scores 0" and
 // is "never auto-routed". tierValue does floor an unknown label at 0, but that
@@ -11,7 +12,8 @@ import { describe, expect, it } from 'vitest'
 // (custom-model-seed.ts, #488). The reworded tooltip drops the score claim
 // entirely, which is also what makes a stale locale detectable here: every
 // pre-#891 translation carried that literal "0" and none of the current ones
-// do. The first fix shipped in six locales only; these tests hold all 60.
+// do. The first fix shipped in six locales only; these tests hold every
+// shipped locale.
 const here = path.dirname(fileURLToPath(import.meta.url))
 const localeDir = path.join(here, '../i18n/locales')
 const scoring = readFileSync(
@@ -55,8 +57,12 @@ describe('capability-tier hint', () => {
     }
   })
 
-  it('translates both strings in every locale, distinct from the English source', () => {
-    expect(locales.length).toBeGreaterThan(50)
+  it('translates both strings in every shipped locale, distinct from the English source', () => {
+    // The locale files on disk must be exactly the set locale-config ships:
+    // a locale added there joins this check, a stray or deleted file fails it.
+    expect([...locales].sort(), `locale files on disk: ${locales.join(', ')}`).toEqual([
+      ...SUPPORTED_LOCALES,
+    ].sort())
     for (const locale of locales) {
       const strings = models(locale)
       for (const key of KEYS) {
