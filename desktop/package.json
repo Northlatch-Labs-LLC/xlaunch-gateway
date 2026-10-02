@@ -30,7 +30,7 @@
     "electron-builder": "^25.1.8",
     "esbuild": "^0.24.0",
     "typescript": "^5.8.0",
-    "vitest": "^3.2.4"
+    "vitest": "^4.1.11"
   },
   "overrides": {
     "tar": "^7.5.19"
