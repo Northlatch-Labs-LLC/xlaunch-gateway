@@ -28,7 +28,7 @@
     "db:migration:create": "npm run db:migration:create -w server"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2",
+    "concurrently": "^9.2.5",
     "jsdom": "^27.4.0"
   },
   "engines": {
