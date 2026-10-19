@@ -23,7 +23,7 @@ export const openapiSpec = {
       'OpenAI-compatible proxy that aggregates free LLM provider tiers behind a single /v1 endpoint. ' +
       'A router picks an available model per request and fails over when a provider is rate-limited. ' +
       'The gateway also speaks OpenAI Responses, Anthropic Messages, native Gemini, and Ollama wire formats.',
-    license: { name: 'MIT', url: 'https://github.com/Northlatch-Labs-LLC/xlaunch-gateway' },
+    license: { name: 'Proprietary', url: 'https://github.com/Northlatch-Labs-LLC/xlaunch-gateway' },
   },
   servers: [
     { url: '/', description: 'This proxy instance' },

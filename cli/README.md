@@ -69,4 +69,5 @@ them into the child process environment for that run only.
 Node.js >= 20.18 and a running Xlaunch Gateway (see the repository README at
 https://github.com/Northlatch-Labs-LLC/xlaunch-gateway).
 
-MIT
+Proprietary — © 2026 Northlatch Labs LLC. All rights reserved.
+Commercial use requires a licence from Northlatch Labs LLC; see `LICENSE`.

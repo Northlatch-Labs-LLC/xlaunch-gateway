@@ -1125,7 +1125,7 @@
       "signIn": "Iniciar sesión"
     },
     "hero": {
-      "badge": "Autoalojado · Licencia MIT",
+      "badge": "Autoalojado · Licencia comercial",
       "title": "Un endpoint para más de 44 proveedores de IA. Tus claves, tus reglas.",
       "subtitle": "Xlaunch Gateway es una pasarela LLM autoalojada que enruta el tráfico de OpenAI, Anthropic, Gemini, Ollama y MCP a través de un único endpoint compatible con OpenAI — con conmutación automática, cuotas por clave y analítica completa.",
       "ctaPrimary": "Crear una cuenta",
@@ -1173,8 +1173,8 @@
         "desc": "Node, Express y SQLite en un único proceso; el panel y la API se sirven desde la misma máquina."
       },
       "license": {
-        "title": "Licencia MIT",
-        "desc": "Gratis y de código abierto. Tus claves de proveedor permanecen en tu máquina, nunca en la nuestra."
+        "title": "Bajo licencia comercial",
+        "desc": "Software licenciado de Northlatch Labs LLC. Tus claves de proveedor permanecen en tu máquina, nunca en la nuestra."
       }
     },
     "how": {
@@ -1197,16 +1197,17 @@
     },
     "pricing": {
       "kicker": "Precios",
-      "title": "Precios honestos: el software es gratis",
+      "title": "Licencias honestas: la pasarela es un producto bajo licencia",
       "software": "La pasarela en sí",
-      "priceNote": "gratis, licencia MIT, autoalojado",
-      "bulletSoftware": "El software es gratuito y de código abierto. Clónalo, ejecútalo, hazle fork.",
+      "price": "Licencia requerida",
+      "priceNote": "propietario, autoalojado",
+      "bulletSoftware": "La pasarela es software bajo licencia. Contacta con Northlatch Labs LLC para el despliegue interno en producción y el uso comercial.",
       "bulletInference": "El coste de inferencia es el de tus propias claves de proveedor — y los 44 proveedores de nivel gratuito incluidos no cuestan nada.",
       "bulletHosted": "Si alguien aloja una pasarela para ti, la inferencia se liquida a través del portal de clientes, a la tarifa que publique.",
       "cta": "Crear una cuenta"
     },
     "footer": {
-      "license": "Licencia MIT",
+      "license": "Propietario — todos los derechos reservados",
       "navLabel": "Pie de página",
       "apiDocs": "Referencia de la API",
       "integrationGuides": "Guías de configuración de clientes"

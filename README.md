@@ -14,7 +14,8 @@ playground, analytics, logs, fusion, prompt compression, the response cache
 and backups. The model catalog ships with the bundled database migrations.
 
 Everything runs locally: Node/Express, SQLite, and a static React build served
-from the same process. MIT licensed; see `LICENSE`.
+from the same process. Proprietary software of Northlatch Labs LLC; internal
+production deployment and commercial use require a licence — see `LICENSE`.
 
 ## Quick start
 

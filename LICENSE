@@ -1,22 +1,20 @@
-MIT License
+Copyright (c) 2026 Northlatch Labs LLC. All rights reserved.
 
-Portions Copyright (c) 2026 Northlatch Labs LLC
-Copyright (c) 2026 Tashfeen Ahmed
+PROPRIETARY AND CONFIDENTIAL — NO LICENCE IS GRANTED.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This repository contains Xlaunch Gateway, the self-hosted LLM gateway product of
+Northlatch Labs LLC, together with its operator dashboard, CLI tooling and
+deployment assets. It is a commercial product, not free or open-source software.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+Source visibility is provided for evaluation, internal deployment by licensed
+customers, and contribution under a signed agreement only. No right to use, copy,
+modify, merge, publish, distribute, sublicense or sell any part of this software,
+in whole or in part, is granted by access to this repository. Internal production
+deployment and any commercial use require a written licence from Northlatch Labs LLC.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Its contents, including the design of its interfaces, are confidential information
+of Northlatch Labs LLC. They may not be disclosed to any third party, reproduced
+outside this repository, or used for any purpose other than evaluation or licensed
+internal deployment.
+
+For licensing enquiries, contact Northlatch Labs LLC.

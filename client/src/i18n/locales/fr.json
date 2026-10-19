@@ -1125,7 +1125,7 @@
       "signIn": "Se connecter"
     },
     "hero": {
-      "badge": "Auto-hébergé · Licence MIT",
+      "badge": "Auto-hébergé · Licence commerciale",
       "title": "Un endpoint pour plus de 44 fournisseurs d'IA. Vos clés, vos règles.",
       "subtitle": "Xlaunch Gateway est une passerelle LLM auto-hébergée qui achemine le trafic OpenAI, Anthropic, Gemini, Ollama et MCP vers un seul endpoint compatible OpenAI — avec basculement automatique, quotas par clé et analytique complète.",
       "ctaPrimary": "Créer un compte",
@@ -1173,8 +1173,8 @@
         "desc": "Node, Express et SQLite dans un unique processus ; le tableau de bord et l'API sont servis par la même machine."
       },
       "license": {
-        "title": "Licence MIT",
-        "desc": "Gratuit et open source. Vos clés de fournisseur restent sur votre machine, jamais chez nous."
+        "title": "Sous licence commerciale",
+        "desc": "Logiciel licencié de Northlatch Labs LLC. Vos clés de fournisseur restent sur votre machine, jamais chez nous."
       }
     },
     "how": {
@@ -1197,16 +1197,17 @@
     },
     "pricing": {
       "kicker": "Tarification",
-      "title": "Une tarification honnête : le logiciel est gratuit",
+      "title": "Des licences honnêtes : la passerelle est un produit sous licence",
       "software": "La passerelle elle-même",
-      "priceNote": "gratuit, licence MIT, auto-hébergé",
-      "bulletSoftware": "Le logiciel est gratuit et open source. Clonez-le, exécutez-le, forkez-le.",
+      "price": "Licence requise",
+      "priceNote": "propriétaire, auto-hébergé",
+      "bulletSoftware": "La passerelle est un logiciel sous licence. Contactez Northlatch Labs LLC pour le déploiement interne en production et l'usage commercial.",
       "bulletInference": "Les coûts d'inférence sont ceux de vos propres clés de fournisseur — et les 44 fournisseurs de palier gratuit inclus ne coûtent rien.",
       "bulletHosted": "Si quelqu'un héberge une passerelle pour vous, vous réglez l'inférence via le portail client, au tarif qu'il publie.",
       "cta": "Créer un compte"
     },
     "footer": {
-      "license": "Licence MIT",
+      "license": "Propriétaire — tous droits réservés",
       "navLabel": "Pied de page",
       "apiDocs": "Référence API",
       "integrationGuides": "Guides de configuration des clients"

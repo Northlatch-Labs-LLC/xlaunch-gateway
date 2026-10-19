@@ -65,7 +65,7 @@ describe('landing page at /', () => {
       'Prompt compression',
       'Analytics and logs',
       'Self-hosted: SQLite, one process',
-      'MIT licensed',
+      'Commercially licensed',
     ]
     for (const title of featureTitles) expect(text).toContain(title)
 
@@ -77,13 +77,13 @@ describe('landing page at /', () => {
     expect(text).toContain('npm start --workspace server')
     expect(text).toContain('POST /v1/chat/completions')
 
-    // Pricing: one honest $0 card, no invented tiers.
-    expect(text).toContain('Honest pricing: the software is free')
-    expect(text).toContain('$0')
+    // Pricing: licence-required card, no invented tiers.
+    expect(text).toContain('Honest licensing: the gateway is a licensed product')
+    expect(text).toContain('Licence required')
 
     // Footer: repo, license, API docs.
     expect(text).toContain('© 2026 Northlatch Labs LLC')
-    expect(text).toContain('MIT License')
+    expect(text).toContain('Proprietary — all rights reserved')
     expect(text).toContain('API reference')
   })
 

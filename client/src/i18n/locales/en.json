@@ -1125,7 +1125,7 @@
       "signIn": "Sign in"
     },
     "hero": {
-      "badge": "Self-hosted · MIT licensed",
+      "badge": "Self-hosted · Commercial licence",
       "title": "One endpoint for 44+ AI providers. Your keys, your rules.",
       "subtitle": "Xlaunch Gateway is a self-hosted LLM gateway that routes OpenAI, Anthropic, Gemini, Ollama and MCP traffic through a single OpenAI-compatible endpoint — with automatic failover, per-key quotas and full analytics.",
       "ctaPrimary": "Create your account",
@@ -1173,8 +1173,8 @@
         "desc": "Node, Express and SQLite in a single process; the dashboard and the API are served from the same box."
       },
       "license": {
-        "title": "MIT licensed",
-        "desc": "Free and open source. Your provider keys stay on your machine, never on ours."
+        "title": "Commercially licensed",
+        "desc": "Licensed software from Northlatch Labs LLC. Your provider keys stay on your machine, never on ours."
       }
     },
     "how": {
@@ -1197,16 +1197,17 @@
     },
     "pricing": {
       "kicker": "Pricing",
-      "title": "Honest pricing: the software is free",
+      "title": "Honest licensing: the gateway is a licensed product",
       "software": "The gateway itself",
-      "priceNote": "free, MIT-licensed, self-hosted",
-      "bulletSoftware": "The software is free and open source. Clone it, run it, fork it.",
+      "price": "Licence required",
+      "priceNote": "proprietary, self-hosted",
+      "bulletSoftware": "The gateway is licensed software. Contact Northlatch Labs LLC for internal production deployment and commercial use.",
       "bulletInference": "Inference costs are your own provider keys — and the 44 bundled free-tier providers cost nothing.",
       "bulletHosted": "If someone hosts a gateway for you, you settle inference with them through the customer portal at their published rate.",
       "cta": "Create your account"
     },
     "footer": {
-      "license": "MIT License",
+      "license": "Proprietary — all rights reserved",
       "navLabel": "Footer",
       "apiDocs": "API reference",
       "integrationGuides": "Client setup guides"

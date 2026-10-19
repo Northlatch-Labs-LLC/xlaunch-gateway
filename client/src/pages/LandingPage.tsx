@@ -225,7 +225,7 @@ export default function LandingPage() {
           <div className="max-w-xl rounded-2xl border bg-card p-6 sm:p-8">
             <p className="text-sm text-muted-foreground">{t('landing.pricing.software')}</p>
             <p className="mt-2 text-4xl font-semibold tracking-tight">
-              $0
+              {t('landing.pricing.price')}
               <span className="ms-2 text-base font-normal text-muted-foreground">
                 {t('landing.pricing.priceNote')}
               </span>
