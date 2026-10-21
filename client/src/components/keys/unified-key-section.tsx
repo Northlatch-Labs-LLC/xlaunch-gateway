@@ -1,26 +1,40 @@
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiFetch } from '@/lib/api'
 import { copyText } from '@/lib/clipboard'
 import { toast } from '@/lib/toast'
 import { Button } from '@/components/ui/button'
 import { useI18n } from '@/i18n'
+import { ReauthDialog, reauthFetch } from './reauth-dialog'
 
+// The unified key read/regenerate are step-up protected server-side: the
+// session alone cannot disclose or rotate the credential every inference
+// client uses. This component gates its fetches behind the shared password
+// dialog (the server enforces the policy; the desktop loopback skip is
+// honored there, so desktop users still see the key without a password).
 export function UnifiedKeySection() {
   const { t } = useI18n()
   const queryClient = useQueryClient()
   const [showKey, setShowKey] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [pending, setPending] = useState<null | 'read' | 'regenerate'>(null)
 
   const { data, isError } = useQuery<{ apiKey: string; publicUrl?: string | null }>({
     queryKey: ['unified-key'],
     queryFn: () => apiFetch('/api/settings/api-key'),
+    retry: false,
   })
 
-  const regenerate = useMutation({
-    mutationFn: () => apiFetch('/api/settings/api-key/regenerate', { method: 'POST' }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['unified-key'] }),
-  })
+  async function gatedRead(password: string) {
+    await reauthFetch<{ apiKey: string }>('/api/settings/api-key', { method: 'GET' }, password)
+    await queryClient.invalidateQueries({ queryKey: ['unified-key'] })
+  }
+
+  async function gatedRegenerate(password: string) {
+    await reauthFetch('/api/settings/api-key/regenerate', { method: 'POST' }, password)
+    await queryClient.invalidateQueries({ queryKey: ['unified-key'] })
+    toast.success(t('keys.copiedKey'))
+  }
 
   const apiKey = data?.apiKey ?? ''
   const masked = apiKey ? apiKey.slice(0, 13) + '•'.repeat(32) : '…'
@@ -51,8 +65,8 @@ export function UnifiedKeySection() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => regenerate.mutate()}
-          disabled={regenerate.isPending || isError}
+          onClick={() => setPending('regenerate')}
+          disabled={isError}
         >
           {t('keys.regenerate')}
         </Button>
@@ -67,7 +81,7 @@ export function UnifiedKeySection() {
           <code className="flex-1 font-mono text-xs bg-muted px-3 py-2 rounded-lg select-all truncate tabular-nums">
             {showKey ? apiKey : masked}
           </code>
-          <Button variant="outline" size="sm" onClick={() => setShowKey(!showKey)}>
+          <Button variant="outline" size="sm" onClick={() => setPending('read')}>
             {showKey ? t('keys.hideKey') : t('keys.showKey')}
           </Button>
           <Button variant="outline" size="sm" onClick={() => void copy()}>
@@ -86,6 +100,19 @@ export function UnifiedKeySection() {
         <span className="text-muted-foreground">{t('keys.endpointMessages')}</span>
         <code className="font-mono">/v1/messages <span className="text-muted-foreground">({t('keys.endpointMessagesHint')})</span></code>
       </div>
+
+      {pending !== null && (
+        <ReauthDialog
+          title={pending === 'read' ? t('keys.unifiedKey') : t('keys.regenerate')}
+          confirmLabel={pending === 'read' ? t('keys.showKey') : t('keys.regenerate')}
+          action={pending === 'read' ? gatedRead : gatedRegenerate}
+          onSuccess={() => {
+            if (pending === 'read') setShowKey(true)
+            setPending(null)
+          }}
+          onOpenChange={open => { if (!open) setPending(null) }}
+        />
+      )}
     </section>
   )
 }

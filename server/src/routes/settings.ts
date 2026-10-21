@@ -6,6 +6,7 @@ import { applyProxyUrl, applyProxyMode, applyProxyEnabled, applyProxyBypass, app
 import { getProvider } from '../providers/index.js';
 import type { Platform } from '@xlaunch-gateway/shared/types.js';
 import type { ProxyMode } from '@xlaunch-gateway/shared/types.js';
+import { requireReauth, skipsReauth } from '../middleware/reauth.js';
 import { getSavedFusionConfig, setSavedFusionConfig, savedFusionConfigSchema, getFusionMaxK } from '../services/fusion.js';
 import { isUnifyEnabled, setUnifyEnabled, getUnifyOverrides, setUnifyOverrides, unifyOverridesSchema } from '../services/model-groups.js';
 import { getClaudeModelMap, setClaudeModelMap } from '../services/anthropic-map.js';
@@ -201,6 +202,11 @@ settingsRouter.get('/url-tokens', (_req: Request, res: Response) => {
 });
 
 settingsRouter.post('/url-tokens', (req: Request, res: Response) => {
+  // Step-up protected: a URL token is a durable, full-equivalent inference
+  // credential (it mints the unified key per request), so minting one demands
+  // the same proof reading the key itself does — and a hijacked session must
+  // not be able to leave behind a credential that outlives its revocation.
+  if (!skipsReauth(req) && !requireReauth(req, res, 'mint a URL token')) return;
   const parsed = z.object({ label: z.string().max(120).optional() }).safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: { message: 'Invalid URL token label', type: 'invalid_request_error' } });
@@ -361,15 +367,22 @@ settingsRouter.put('/guardrails', (req: Request, res: Response) => {
   });
 });
 
-// Get the unified API key
-settingsRouter.get('/api-key', (_req: Request, res: Response) => {
+// Get the unified API key. Step-up protected: the session alone is not enough
+// to read the credential every inference client authenticates with (the same
+// proof reading ONE provider key demands). Desktop builds skip re-auth only
+// for loopback requests, mirroring the key reveal/export policy.
+settingsRouter.get('/api-key', (req: Request, res: Response) => {
+  if (!skipsReauth(req) && !requireReauth(req, res, 'read the unified API key')) return;
   // The public address travels with the key so the dashboard prints the base
   // URL a customer can actually reach, not the page's own origin.
   res.json({ apiKey: getUnifiedApiKey(), publicUrl: loadConfig().publicUrl });
 });
 
-// Regenerate the unified API key
-settingsRouter.post('/api-key/regenerate', (_req: Request, res: Response) => {
+// Regenerate the unified API key — step-up protected: regeneration invalidates
+// every deployed client key, which is exactly the power a hijacked session
+// must not hold silently.
+settingsRouter.post('/api-key/regenerate', (req: Request, res: Response) => {
+  if (!skipsReauth(req) && !requireReauth(req, res, 'regenerate the unified API key')) return;
   const newKey = regenerateUnifiedKey();
   res.json({ apiKey: newKey });
 });

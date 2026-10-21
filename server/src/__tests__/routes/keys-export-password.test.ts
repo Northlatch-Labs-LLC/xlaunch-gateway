@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import type { Express } from 'express';
 import { createApp } from '../../app.js';
 import { initDb, getDb } from '../../db/index.js';
+import { __resetReauthForTests } from '../../middleware/reauth.js';
 import { mintDashboardToken } from '../helpers/auth.js';
 
 let app: Express;
@@ -41,6 +42,7 @@ describe('Key export — password re-verification', () => {
 
   beforeEach(() => {
     getDb().prepare('DELETE FROM api_keys').run();
+    __resetReauthForTests();
   });
 
   it('returns 403 when no password header is provided', async () => {

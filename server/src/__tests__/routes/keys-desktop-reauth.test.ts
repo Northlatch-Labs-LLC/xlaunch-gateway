@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, beforeEach, afterAll } from 'vitest';
 import express, { type Express } from 'express';
 import { keysRouter } from '../../routes/keys.js';
 import { requireAuth } from '../../middleware/requireAuth.js';
+import { __resetReauthForTests } from '../../middleware/reauth.js';
 import { initDb, getDb } from '../../db/index.js';
 import { mintDashboardToken } from '../helpers/auth.js';
 
@@ -64,6 +65,7 @@ describe('Desktop re-auth bypass is loopback-only (#786)', () => {
   beforeEach(() => {
     getDb().prepare('DELETE FROM api_keys').run();
     delete process.env.XLAUNCH_GATEWAY_DESKTOP;
+    __resetReauthForTests();
   });
 
   afterAll(() => {

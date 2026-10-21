@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiFetch } from '@/lib/api'
 import { useI18n } from '@/i18n'
+import { ReauthDialog, reauthFetch } from './reauth-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -45,6 +46,10 @@ export function AgentCompatibilitySection() {
   const queryClient = useQueryClient()
   const [tokenLabel, setTokenLabel] = useState('')
   const [newToken, setNewToken] = useState<string | null>(null)
+  // Minting a URL token is step-up protected server-side (a token is a
+  // durable, full-equivalent inference credential), so the create button
+  // opens the shared password dialog instead of firing the mutation directly.
+  const [mintDialogOpen, setMintDialogOpen] = useState(false)
   const { data: mapData } = useQuery<{ map: GeminiMap }>({
     queryKey: ['gemini-map'],
     queryFn: () => apiFetch('/api/settings/gemini-map'),
@@ -93,10 +98,10 @@ export function AgentCompatibilitySection() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['enable-mcp'] }),
   })
   const createToken = useMutation({
-    mutationFn: () => apiFetch<UrlToken>('/api/settings/url-tokens', {
+    mutationFn: (password: string) => reauthFetch<UrlToken>('/api/settings/url-tokens', {
       method: 'POST',
       body: JSON.stringify({ label: tokenLabel }),
-    }),
+    }, password),
     onSuccess: token => {
       setNewToken(token.token ?? null)
       setTokenLabel('')
@@ -213,10 +218,19 @@ export function AgentCompatibilitySection() {
             placeholder={t('keys.urlTokenLabel')}
             className="max-w-xs"
           />
-          <Button size="sm" onClick={() => createToken.mutate()} disabled={createToken.isPending}>
+          <Button size="sm" onClick={() => setMintDialogOpen(true)} disabled={createToken.isPending}>
             {t('keys.createUrlToken')}
           </Button>
         </div>
+        {mintDialogOpen && (
+          <ReauthDialog
+            title={t('keys.createUrlToken')}
+            confirmLabel={t('keys.createUrlToken')}
+            action={async password => { await createToken.mutateAsync(password) }}
+            onSuccess={() => setMintDialogOpen(false)}
+            onOpenChange={setMintDialogOpen}
+          />
+        )}
         {newToken && (
           <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3">
             <p className="mb-2 text-xs text-muted-foreground">{t('keys.urlTokenOnce')}</p>

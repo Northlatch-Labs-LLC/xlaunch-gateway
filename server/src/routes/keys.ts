@@ -8,7 +8,7 @@ import { resolveProvider, getAllProviders } from '../providers/index.js';
 import { encrypt, decrypt, maskKey } from '../lib/crypto.js';
 import { parseKeysFromFile, stripJsoncComments, stripTrailingCommas } from '../lib/key-parser.js';
 import { assessProviderUrl } from '../lib/url-guard.js';
-import { verifyCredentials } from '../services/auth.js';
+import { requireReauth, skipsReauth } from '../middleware/reauth.js';
 import { getActiveCooldownsForKeys, clearCooldownsForKey } from '../services/ratelimit.js';
 import { resolveCustomEndpointKey, customEndpointKeyIds, siblingEndpointKeyId, endpointHasCredential } from '../services/custom-endpoint.js';
 import { registerCustomModels, registerCustomChatModels } from '../services/custom-model-register.js';
@@ -342,27 +342,12 @@ keysRouter.delete('/:id/cooldowns', (req: Request, res: Response) => {
   res.json({ cleared });
 });
 
-// Is the caller connecting from this machine? Read from the real socket peer
-// address, NOT req.ip or X-Forwarded-For: those are caller-controlled, so
-// trusting them here would let a remote caller claim to be local.
-function isLoopbackRemote(req: Request): boolean {
-  let addr = req.socket?.remoteAddress ?? '';
-  // Node reports IPv4 loopback over a dual-stack socket as "::ffff:127.0.0.1".
-  if (addr.startsWith('::ffff:')) addr = addr.slice(7);
-  if (addr === '::1') return true;
-  return /^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(addr);
-}
-
 // #786: the desktop build has no user-set password (its machine user's password
 // is random and never shown), so re-verification would lock desktop users out of
-// reading their own keys. The embedder marks the process
-// (desktop/src/server-host.ts) and the two plaintext-key endpoints below skip
-// re-auth for it — but ONLY for a request from this machine. The desktop app can
-// bind 0.0.0.0 through its LAN-access toggle, and a remote viewer on that LAN
-// still has to prove the password before it can lift a key.
-function skipsReauth(req: Request): boolean {
-  return process.env.XLAUNCH_GATEWAY_DESKTOP === '1' && isLoopbackRemote(req);
-}
+// reading their own keys. The desktop skip (and its loopback check) lives in
+// middleware/reauth.ts alongside the shared reauth policy, so every gated
+// surface — key reveal/export here, unified-key and URL-token disclosure in
+// settings — means the same thing by it.
 
 // Export keys — returns plaintext keys in the requested format.
 // GET /api/keys/export?format=json|env|csv&healthy=true
@@ -370,14 +355,7 @@ function skipsReauth(req: Request): boolean {
 // Password re-verification via x-reauth-password header is required, except for
 // a local request on the desktop build (see skipsReauth).
 keysRouter.get('/export', (req: Request, res: Response) => {
-  const user = (req as any).user;
-  if (!skipsReauth(req)) {
-    const password = req.headers['x-reauth-password'] as string | undefined;
-    if (!password || !verifyCredentials(user.email, password)) {
-      res.status(403).json({ error: { message: 'Password verification required to export keys', type: 'authentication_error' } });
-      return;
-    }
-  }
+  if (!skipsReauth(req) && !requireReauth(req, res, 'export keys')) return;
   const db = getDb();
   const format = (req.query.format as string) ?? 'json';
   const healthyOnly = req.query.healthy === 'true';
@@ -491,14 +469,7 @@ keysRouter.get('/export', (req: Request, res: Response) => {
 // local request on the desktop build, which has no password to re-enter (see
 // skipsReauth; a LAN client of that same desktop server still needs one).
 keysRouter.post('/:id/reveal', (req: Request, res: Response) => {
-  const user = (req as any).user;
-  if (!skipsReauth(req)) {
-    const password = req.headers['x-reauth-password'] as string | undefined;
-    if (!password || !verifyCredentials(user.email, password)) {
-      res.status(403).json({ error: { message: 'Password verification required to reveal a key', type: 'authentication_error' } });
-      return;
-    }
-  }
+  if (!skipsReauth(req) && !requireReauth(req, res, 'reveal a key')) return;
 
   const id = parseInt(req.params.id as string, 10);
   if (isNaN(id)) {

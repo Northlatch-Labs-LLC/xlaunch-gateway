@@ -56,6 +56,8 @@ describe('revocable URL-token aliases', () => {
   it('mints once, authenticates a headerless alias, and revokes immediately', async () => {
     const minted = await request(app, 'POST', '/api/settings/url-tokens', { label: 'VS Code' }, {
       Authorization: `Bearer ${dashboardToken}`,
+      // Minting is step-up protected: the request carries the fixture password.
+      'x-reauth-password': 'password123',
     });
     expect(minted.status).toBe(201);
     expect(minted.body.token).toMatch(/^flmurl_/);
