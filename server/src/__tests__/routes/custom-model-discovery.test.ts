@@ -6,6 +6,11 @@ import { setCooldown, isOnCooldown } from '../../services/ratelimit.js';
 import { PROBE_MAX_TOKENS } from '../../services/model-discovery.js';
 import { mintDashboardToken, isGatedApiPath } from '../helpers/auth.js';
 
+// These suites exercise custom providers against loopback mock servers; the
+// private-range SSRF default-on for non-loopback binds would refuse them.
+process.env.XLAUNCH_GATEWAY_BLOCK_PRIVATE_PROVIDER_URLS = '0';
+
+
 // #488: a relay's model list changes weekly, so the endpoint's own /models
 // route is the source of truth for what the USER's key can reach. This is
 // discovery on the operator's OWN endpoint with the operator's OWN key — it

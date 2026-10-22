@@ -10,6 +10,11 @@ import { mintDashboardToken, isGatedApiPath } from '../helpers/auth.js';
 // route lands on Moonshot's own API (a custom endpoint on a Moonshot host), and
 // must be stripped for any other endpoint, even one serving a Kimi model.
 
+
+// Custom-endpoint fixtures run against loopback servers; hold the private-range
+// SSRF guard (audit S1/F3 default-on for non-loopback binds) at explicit opt-out.
+beforeAll(() => { process.env.XLAUNCH_GATEWAY_BLOCK_PRIVATE_PROVIDER_URLS = '0'; });
+
 let dashToken = '';
 
 async function request(app: Express, method: string, path: string, body?: any, headers: Record<string, string> = {}) {

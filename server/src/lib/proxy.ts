@@ -333,8 +333,10 @@ export function applyProxyUrl(dbValue: string): void {
  * HTTP request, so a socks5:// (or otherwise non-HTTP) endpoint would fail
  * every provider call at runtime with an opaque error. Say so once at boot and
  * degrade to a forward proxy, which is what such a URL was always good for. A
- * plaintext relay to a remote host does work, but leaks the provider key and
- * the relay token it carries, so that one only earns a warning.
+ * plaintext relay to a remote host carries the provider key and the relay
+ * token in the clear (audit S1/F4), so it gets the same treatment: the
+ * dashboard path already refuses the configuration up front, and the boot path
+ * now degrades to a forward proxy instead of silently leaking.
  */
 function enforceRelayUrlPolicy(): void {
   if (_proxyMode !== 'fetch-relay' || !_proxyUrl) return;
@@ -346,7 +348,10 @@ function enforceRelayUrlPolicy(): void {
     return;
   }
   const error = fetchRelayUrlError(_proxyUrl);
-  if (error) console.warn(`[proxy] ${error}`);
+  if (error) {
+    console.warn(`[proxy] ${error} Falling back to a forward proxy.`);
+    _proxyMode = 'forward';
+  }
 }
 
 /**

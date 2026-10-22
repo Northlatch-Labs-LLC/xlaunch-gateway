@@ -189,7 +189,7 @@ describe('fetch-relay transport', () => {
     delete process.env.PROXY_URL;
   });
 
-  it('keeps a plaintext remote relay working but warns that it leaks the keys it carries', () => {
+  it('degrades a plaintext remote relay to forward mode and warns that it leaks the keys it carries (audit S1/F4)', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     vi.spyOn(console, 'log').mockImplementation(() => {});
     process.env.PROXY_MODE = 'fetch-relay';
@@ -198,7 +198,10 @@ describe('fetch-relay transport', () => {
     applyProxyUrl('');
     applyProxyMode('fetch-relay');
 
-    expect(getProxyMode()).toBe('fetch-relay');
+    // The boot path now ENFORCES the https rule the dashboard already
+    // enforced: a plaintext remote relay silently leaking the provider key
+    // and relay token is exactly the configuration this refuses.
+    expect(getProxyMode()).toBe('forward');
     expect(warn.mock.calls.flat().join(' ')).toMatch(/must use https/);
     delete process.env.PROXY_MODE;
     delete process.env.PROXY_URL;

@@ -65,12 +65,18 @@ describe('POST /api/keys/custom SSRF guard (#440)', () => {
     expect(res.status).toBe(400);
   });
 
-  it('still accepts a loopback base URL by default (local Ollama)', async () => {
-    const res = await post(app, '/api/keys/custom', {
-      baseUrl: 'http://127.0.0.1:11434/v1',
-      model: 'qwen3:4b',
-    });
-    expect(res.status).toBe(201);
+  it('still accepts a loopback base URL by default on a loopback bind (local Ollama)', async () => {
+    process.env.HOST = '127.0.0.1';
+    delete process.env.XLAUNCH_GATEWAY_BLOCK_PRIVATE_PROVIDER_URLS;
+    try {
+      const res = await post(app, '/api/keys/custom', {
+        baseUrl: 'http://127.0.0.1:11434/v1',
+        model: 'qwen3:4b',
+      });
+      expect(res.status).toBe(201);
+    } finally {
+      delete process.env.HOST;
+    }
   });
 });
 

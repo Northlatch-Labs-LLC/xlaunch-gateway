@@ -6,6 +6,11 @@ import { decrypt } from '../../lib/crypto.js';
 import { routePinnedModel } from '../../services/router.js';
 import { mintDashboardToken, isGatedApiPath } from '../helpers/auth.js';
 
+// These suites exercise custom providers against loopback mock servers; the
+// private-range SSRF default-on for non-loopback binds would refuse them.
+process.env.XLAUNCH_GATEWAY_BLOCK_PRIVATE_PROVIDER_URLS = '0';
+
+
 // #619(b): a custom endpoint can hold SEVERAL credentials. Adding a second key
 // for a base_url that already has one used to UPDATE the existing row — the
 // first key vanished with no warning — and the models upsert re-bound every

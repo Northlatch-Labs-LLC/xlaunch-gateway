@@ -192,7 +192,19 @@ async function defaultResolve(hostname: string): Promise<string[]> {
 }
 
 function blockPrivateEnabled(): boolean {
-  return /^(1|true|yes)$/i.test(process.env.XLAUNCH_GATEWAY_BLOCK_PRIVATE_PROVIDER_URLS ?? '');
+  const explicit = process.env.XLAUNCH_GATEWAY_BLOCK_PRIVATE_PROVIDER_URLS;
+  // Explicit opt-out always wins, so an exposed deployment that genuinely
+  // serves local providers (llama.cpp on localhost behind a LAN-facing bind)
+  // can still say so.
+  if (/^(0|false|no)$/i.test(explicit ?? '')) return false;
+  if (/^(1|true|yes)$/i.test(explicit ?? '')) return true;
+  // Default follows the bind (audit S1/F3): a server on all interfaces or a
+  // named non-loopback host is LAN/internet-reachable, and an SSRF read of
+  // loopback/RFC1918 services is exactly what an exposed deployment must not
+  // allow by accident. Loopback-only binds keep the local-provider default.
+  const host = (process.env.HOST ?? '::').toLowerCase();
+  const loopbackBind = host === '::1' || host === '127.0.0.1' || host === 'localhost';
+  return !loopbackBind;
 }
 
 /**

@@ -29,10 +29,10 @@ import {
 // Every env var the proxy config reads, in both the upper- and lower-case
 // spellings the convention allows. Cleared around each test so a developer
 // machine that genuinely sits behind a corporate proxy doesn't fail the suite.
-// XLAUNCH_GATEWAY_BLOCK_PRIVATE_PROVIDER_URLS is not a proxy knob, but the local/LAN
-// cases below call proxyFetch with platform 'custom', which re-runs the SSRF
-// guard — an operator machine that exports it would fail them for the wrong
-// reason.
+// XLAUNCH_GATEWAY_BLOCK_PRIVATE_PROVIDER_URLS is not a proxy knob, but the
+// local/LAN cases below call proxyFetch with platform 'custom', which re-runs
+// the SSRF guard; these suites target loopback fixtures, so the guard is held
+// at its explicit opt-out for the whole file (set below, never cleared).
 const PROXY_ENV_VARS = [
   'PROXY_URL',
   'PROXY_MODE',
@@ -41,7 +41,6 @@ const PROXY_ENV_VARS = [
   'HTTP_PROXY',
   'NO_PROXY',
   'XLAUNCH_GATEWAY_PROXY_LOCAL_DESTINATIONS',
-  'XLAUNCH_GATEWAY_BLOCK_PRIVATE_PROVIDER_URLS',
 ];
 
 function clearProxyEnv(): void {
@@ -51,10 +50,16 @@ function clearProxyEnv(): void {
   }
 }
 
+// These suites target loopback/LAN fixtures; the private-range SSRF
+// default-on for non-loopback binds (audit S1/F3) is a separate concern
+// tested in url-guard.test.ts. Held at explicit opt-out for the whole file.
+process.env.XLAUNCH_GATEWAY_BLOCK_PRIVATE_PROVIDER_URLS = '0';
+
 // Reset module-level proxy state before each test so cases don't bleed into
 // each other (the lib keeps a process-wide config + a short dispatcher cache).
 beforeEach(() => {
   clearProxyEnv();
+  process.env.XLAUNCH_GATEWAY_BLOCK_PRIVATE_PROVIDER_URLS = '0';
   applyProxyEnabled(true);
   applyProxyBypass('');
   applyProxyUrl(''); // clears the URL and the dispatcher cache
@@ -89,7 +94,9 @@ describe('proxy config accessors', () => {
   });
 
   it('keeps a legacy PROXY_URL in forward mode unless PROXY_MODE is explicit', () => {
-    process.env.PROXY_URL = 'http://legacy-proxy:8080';
+    // The env legacy URL must be relay-legal (https): an http:// one now
+    // degrades to forward by policy before the mode-precedence is observable.
+    process.env.PROXY_URL = 'https://legacy-proxy:8080';
     applyProxyUrl('https://saved-relay.example.test');
     applyProxyMode('fetch-relay');
     expect(getProxyMode()).toBe('forward');

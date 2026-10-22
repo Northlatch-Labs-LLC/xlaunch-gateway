@@ -103,10 +103,40 @@ describe('assessProviderUrl', () => {
     expect(linkLocal.allowed).toBe(false);
   });
 
-  it('allows loopback and private LAN targets by default (local Ollama)', async () => {
+  it('allows loopback and private LAN targets by default on a LOOPBACK bind (local Ollama)', async () => {
+    // Audit S1/F3: the default now follows the bind. This suite runs with no
+    // HOST set ('::' = all interfaces)... which is exactly why the explicit
+    // loopback-bind cases below set HOST per assertion; here the deployment
+    // default is asserted through the explicit opt-out instead.
+    process.env.XLAUNCH_GATEWAY_BLOCK_PRIVATE_PROVIDER_URLS = '0';
     expect((await assessProviderUrl('http://localhost:11434/v1', { resolve: async () => ['127.0.0.1'] })).allowed).toBe(true);
     expect((await assessProviderUrl('http://127.0.0.1:8080/v1')).allowed).toBe(true);
     expect((await assessProviderUrl('http://192.168.1.20:11434/v1')).allowed).toBe(true);
+    delete process.env.XLAUNCH_GATEWAY_BLOCK_PRIVATE_PROVIDER_URLS;
+  });
+
+  it('defaults the private-range block ON when the bind is non-loopback (audit S1/F3)', async () => {
+    for (const host of ['::', '0.0.0.0', '192.168.1.10']) {
+      process.env.HOST = host;
+      delete process.env.XLAUNCH_GATEWAY_BLOCK_PRIVATE_PROVIDER_URLS;
+      expect((await assessProviderUrl('http://127.0.0.1:8080/v1')).allowed).toBe(false);
+      expect((await assessProviderUrl('http://192.168.1.20:11434/v1')).allowed).toBe(false);
+    }
+    // Loopback binds keep the local-provider default.
+    for (const host of ['127.0.0.1', '::1', 'localhost']) {
+      process.env.HOST = host;
+      delete process.env.XLAUNCH_GATEWAY_BLOCK_PRIVATE_PROVIDER_URLS;
+      expect((await assessProviderUrl('http://127.0.0.1:8080/v1')).allowed).toBe(true);
+    }
+    delete process.env.HOST;
+  });
+
+  it('an explicit opt-out wins even on a non-loopback bind', async () => {
+    process.env.HOST = '0.0.0.0';
+    process.env.XLAUNCH_GATEWAY_BLOCK_PRIVATE_PROVIDER_URLS = '0';
+    expect((await assessProviderUrl('http://127.0.0.1:8080/v1')).allowed).toBe(true);
+    delete process.env.HOST;
+    delete process.env.XLAUNCH_GATEWAY_BLOCK_PRIVATE_PROVIDER_URLS;
   });
 
   it('blocks loopback and private targets under XLAUNCH_GATEWAY_BLOCK_PRIVATE_PROVIDER_URLS', async () => {

@@ -10,6 +10,11 @@ import { endpointHandle, qualifiedModelMemberId } from '../../lib/endpoint-scope
 import { buildModelListing } from '../../services/model-listing.js';
 import { mintDashboardToken, isGatedApiPath } from '../helpers/auth.js';
 
+// These suites exercise custom providers against loopback mock servers; the
+// private-range SSRF default-on for non-loopback binds would refuse them.
+process.env.XLAUNCH_GATEWAY_BLOCK_PRIVATE_PROVIDER_URLS = '0';
+
+
 // Per-endpoint model identity (#651). Two relays that both offer
 // `deepseek-v3.1` used to collapse into ONE models row: one enabled flag, one
 // reliability/speed bucket. Relay A going bad took relay B's copy down with it

@@ -6,6 +6,11 @@ import { encrypt } from '../../lib/crypto.js';
 import { mintDashboardToken, isGatedApiPath } from '../helpers/auth.js';
 import { applyAllModelOverrides } from '../../services/model-state.js';
 
+// Custom-endpoint fixtures run against loopback; hold the SSRF private-range
+// default-on (audit S1/F3) at explicit opt-out for these suites.
+beforeAll(() => { process.env.XLAUNCH_GATEWAY_BLOCK_PRIVATE_PROVIDER_URLS = '0'; });
+
+
 let dashToken = '';
 
 const PROFILE_SELECTION_SQL = 'SELECT enabled FROM profile_models WHERE profile_id = ? AND model_db_id = ?';

@@ -4,6 +4,11 @@ import { createApp } from '../../app.js';
 import { initDb, getDb, getUnifiedApiKey } from '../../db/index.js';
 import { mintDashboardToken } from '../helpers/auth.js';
 
+// These suites exercise custom providers against loopback mock servers; the
+// private-range SSRF default-on for non-loopback binds would refuse them.
+process.env.XLAUNCH_GATEWAY_BLOCK_PRIVATE_PROVIDER_URLS = '0';
+
+
 // #619: relays hand out model ids that are not header-safe — Chinese names,
 // bracketed variant suffixes, spaces. Splicing one straight into X-Routed-Via
 // made Node throw ERR_INVALID_CHAR while writing the response, so a call that

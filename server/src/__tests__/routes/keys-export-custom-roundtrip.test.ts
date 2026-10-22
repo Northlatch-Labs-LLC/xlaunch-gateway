@@ -10,6 +10,11 @@ import { mintDashboardToken } from '../helpers/auth.js';
 // .env and .csv carried no base_url, the importer refused platform 'custom'
 // outright, and the dialog counted rows the export then skipped.
 
+
+// Custom-endpoint fixtures run against loopback servers; hold the private-range
+// SSRF guard (audit S1/F3 default-on for non-loopback binds) at explicit opt-out.
+beforeAll(() => { process.env.XLAUNCH_GATEWAY_BLOCK_PRIVATE_PROVIDER_URLS = '0'; });
+
 let dashToken = '';
 
 async function exportText(app: Express, format: string): Promise<string> {
@@ -86,8 +91,9 @@ describe('#687 custom endpoints survive an export/import round trip', () => {
   beforeAll(() => {
     process.env.ENCRYPTION_KEY = '0'.repeat(64);
     // Private addresses must stay importable — a custom endpoint is usually a
-    // box on the LAN. The SSRF guard only blocks them when this is set.
-    delete process.env.XLAUNCH_GATEWAY_BLOCK_PRIVATE_PROVIDER_URLS;
+    // box on the LAN. Since audit S1/F3 the guard blocks them by DEFAULT on a
+    // non-loopback bind, so this suite holds the explicit opt-out.
+    process.env.XLAUNCH_GATEWAY_BLOCK_PRIVATE_PROVIDER_URLS = '0';
     initDb(':memory:');
     app = createApp();
     dashToken = mintDashboardToken();

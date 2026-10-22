@@ -8,6 +8,11 @@ import { routeRequest } from '../../services/router.js';
 import { resolveProvider, getProvider } from '../../providers/index.js';
 import { mintDashboardToken, isGatedApiPath } from '../helpers/auth.js';
 
+// These suites exercise custom providers against loopback mock servers; the
+// private-range SSRF default-on for non-loopback binds would refuse them.
+process.env.XLAUNCH_GATEWAY_BLOCK_PRIVATE_PROVIDER_URLS = '0';
+
+
 let dashToken = '';
 
 async function post(app: Express, path: string, body: any) {

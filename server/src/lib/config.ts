@@ -127,12 +127,22 @@ function parsePublicUrl(): string | null {
 // headers); true → trust all proxies; a non-negative integer → that many hops
 // from the socket peer (so `TRUST_PROXY=1` means "one proxy in front", the
 // Express idiom, not "trust everything"); otherwise a comma-separated list of
-// proxy addresses/CIDRs → trust only those hops.
+// proxy addresses/CIDRs → trust only those hops. `true` also warns at boot
+// (audit S1/F6): it walks caller-supplied X-Forwarded-For for rate-limit
+// bucketing, so a direct LAN client can mint fresh buckets per request —
+// name your proxy's address or hop count instead.
 function parseTrustProxy(): boolean | number | string[] {
   const raw = process.env.TRUST_PROXY;
   if (raw === undefined || raw.trim() === '') return false;
   const lower = raw.trim().toLowerCase();
-  if (lower === 'true' || lower === 'yes') return true;
+  if (lower === 'true' || lower === 'yes') {
+    console.warn(
+      '[config] TRUST_PROXY=true trusts EVERY hop: any client can spoof X-Forwarded-For to fork'
+      + ' rate-limit buckets and pollute analytics IPs. Name your proxy instead'
+      + ' (TRUST_PROXY=1, or TRUST_PROXY=<proxy address>).',
+    );
+    return true;
+  }
   if (lower === 'false' || lower === 'no') return false;
   if (/^\d+$/.test(lower)) {
     const hops = Number(lower);

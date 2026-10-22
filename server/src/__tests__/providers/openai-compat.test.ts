@@ -2,6 +2,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import dns from 'node:dns';
 import { OpenAICompatProvider } from '../../providers/openai-compat.js';
 
+
+// Custom-endpoint fixtures run against loopback servers; hold the private-range
+// SSRF guard (audit S1/F3 default-on for non-loopback binds) at explicit opt-out.
+process.env.XLAUNCH_GATEWAY_BLOCK_PRIVATE_PROVIDER_URLS = '0';
+
 describe('OpenAICompatProvider', () => {
   let provider: OpenAICompatProvider;
 

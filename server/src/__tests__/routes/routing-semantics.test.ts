@@ -1,4 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+
+// Custom-endpoint fixtures run against loopback; hold the SSRF private-range
+// default-on (audit S1/F3) at explicit opt-out for this suite.
+process.env.XLAUNCH_GATEWAY_BLOCK_PRIVATE_PROVIDER_URLS = '0';
 import type { Express } from 'express';
 import { createApp } from '../../app.js';
 import { initDb, getDb } from '../../db/index.js';

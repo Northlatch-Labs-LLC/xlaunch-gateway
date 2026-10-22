@@ -11,6 +11,11 @@ import { mintDashboardToken } from '../helpers/auth.js';
 // row outright. So a custom endpoint still could not be restored from its own
 // export file through the UI. These cover the route the dashboard actually uses.
 
+
+// Custom-endpoint fixtures run against loopback servers; hold the private-range
+// SSRF guard (audit S1/F3 default-on for non-loopback binds) at explicit opt-out.
+beforeAll(() => { process.env.XLAUNCH_GATEWAY_BLOCK_PRIVATE_PROVIDER_URLS = '0'; });
+
 let dashToken = '';
 
 async function post(app: Express, path: string, body: unknown) {
