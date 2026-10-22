@@ -44,9 +44,13 @@ const loginSchema = z.object({
 
 // ── Brute-force throttle ──────────────────────────────────────────────────
 // Simple in-memory per-email limiter. A local single-user tool doesn't need a
-// distributed store; this just blunts online password guessing.
+// distributed store; this just blunts online password guessing. The map is
+// bounded (audit S1/F7): a remote attacker rotating guessed emails must not
+// grow process memory without limit — the oldest entries evict first, and an
+// active lockout is re-inserted so it is never evicted mid-lock.
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MS = 15 * 60 * 1000;
+const MAX_TRACKED_EMAILS = 1000;
 const attempts = new Map<string, { count: number; lockedUntil: number }>();
 
 function isLockedOut(email: string): boolean {
@@ -61,7 +65,17 @@ function recordFailure(email: string): void {
     a.lockedUntil = Date.now() + LOCKOUT_MS;
     a.count = 0;
   }
+  attempts.delete(key);
   attempts.set(key, a);
+  if (attempts.size > MAX_TRACKED_EMAILS) {
+    const oldest = attempts.keys().next().value;
+    if (oldest !== undefined) {
+      const entry = attempts.get(oldest);
+      attempts.delete(oldest);
+      // Never evict an entry that is actively locked out.
+      if (entry && entry.lockedUntil > Date.now()) attempts.set(oldest, entry);
+    }
+  }
 }
 function clearFailures(email: string): void {
   attempts.delete(email.toLowerCase());

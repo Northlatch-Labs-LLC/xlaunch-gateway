@@ -41,12 +41,24 @@ export function createUser(email: string, password: string): SessionUser {
   return { userId: Number(result.lastInsertRowid), email: normalized };
 }
 
+/**
+ * A fixed scrypt hash of an unreachable password, verified against when the
+ * email is unknown so the response time matches the known-email path (audit
+ * S1/F8): without it, an unknown email returns before any scrypt run and the
+ * timing difference distinguishes registered from unregistered addresses.
+ */
+const DUMMY_HASH = hashPassword('timing-equalizer-' + '0'.repeat(32));
+
 /** Verify credentials. Returns the user on success, null on failure. */
 export function verifyCredentials(email: string, password: string): SessionUser | null {
   const db = getDb();
   const row = db.prepare('SELECT id, email, password_hash FROM users WHERE email = ?')
     .get(normalizeEmail(email)) as { id: number; email: string; password_hash: string } | undefined;
-  if (!row) return null;
+  if (!row) {
+    // Burn the same scrypt cost the known-email path would, then fail.
+    verifyPassword(password, DUMMY_HASH);
+    return null;
+  }
   if (!verifyPassword(password, row.password_hash)) return null;
   return { userId: row.id, email: row.email };
 }
