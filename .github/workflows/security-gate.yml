@@ -1,0 +1,42 @@
+name: dependency and static security gate
+
+# Audit-finding prevention (Phase 2 step 17), gateway copy: a new production
+# dependency with a known high/critical advisory fails the PR before merge.
+# Related: AUDIT-0.3.0-beta.4.md (this repo carried the 4 criticals fixed in
+# 7eabe05; this gate keeps the count at zero).
+
+on:
+  pull_request:
+  schedule:
+    - cron: '0 6 * * 1' # weekly, Monday 06:00 UTC
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  audit-production:
+    name: npm audit (production deps)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm ci
+      - name: Production dependency audit
+        # HIGH is the gate: this repo shipped with 4 criticals once; it stays at zero.
+        run: npm audit --omit=dev --audit-level=high
+
+  codeql:
+    name: CodeQL (javascript-typescript)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          paths-ignore: |
+            dist
+      - uses: github/codeql-action/analyze@v3
