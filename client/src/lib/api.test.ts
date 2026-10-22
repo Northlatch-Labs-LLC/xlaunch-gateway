@@ -32,12 +32,13 @@ describe('apiFetch 401 handling', () => {
   beforeEach(() => {
     events = []
     vi.stubGlobal('localStorage', makeStorage())
+    vi.stubGlobal('sessionStorage', makeStorage())
     vi.stubGlobal('window', { dispatchEvent: (e: Event) => { events.push(e.type); return true } })
     // Node's CustomEvent (>=19) works; make sure it exists either way.
     if (typeof globalThis.CustomEvent === 'undefined') {
       vi.stubGlobal('CustomEvent', class extends Event {})
     }
-    localStorage.setItem(TOKEN_KEY, 'session-token')
+    sessionStorage.setItem(TOKEN_KEY, 'session-token')
   })
 
   afterEach(() => {
@@ -52,7 +53,7 @@ describe('apiFetch 401 handling', () => {
     const { apiFetch } = await import('./api')
 
     await expect(apiFetch('/api/keys')).rejects.toMatchObject({ status: 401, code: 'authentication_error' })
-    expect(localStorage.getItem(TOKEN_KEY)).toBeNull()
+    expect(sessionStorage.getItem(TOKEN_KEY)).toBeNull()
     expect(events).toContain('xlaunch-gateway:unauthorized')
   })
 
@@ -64,7 +65,7 @@ describe('apiFetch 401 handling', () => {
 
     await expect(apiFetch('/api/keys/custom/discover-models', { method: 'POST', body: '{}' }))
       .rejects.toMatchObject({ status: 401, code: 'upstream_error' })
-    expect(localStorage.getItem(TOKEN_KEY)).toBe('session-token')
+    expect(sessionStorage.getItem(TOKEN_KEY)).toBe('session-token')
     expect(events).toHaveLength(0)
   })
 
@@ -73,7 +74,7 @@ describe('apiFetch 401 handling', () => {
     const { apiFetch } = await import('./api')
 
     await expect(apiFetch('/api/whatever')).rejects.toMatchObject({ status: 401 })
-    expect(localStorage.getItem(TOKEN_KEY)).toBe('session-token')
+    expect(sessionStorage.getItem(TOKEN_KEY)).toBe('session-token')
     expect(events).toHaveLength(0)
   })
 })

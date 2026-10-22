@@ -9,17 +9,17 @@ const TOKEN_KEY = 'xlaunch_gateway_customer_token';
 
 /** The signed-in customer's session token, if any. */
 export function getCustomerToken(): string | null {
-  try { return localStorage.getItem(TOKEN_KEY); } catch { return null; }
+  try { return sessionStorage.getItem(TOKEN_KEY); } catch { return null; }
 }
 
 /** Persist a customer session token. */
 export function setCustomerToken(token: string): void {
-  try { localStorage.setItem(TOKEN_KEY, token); } catch { /* storage unavailable; the session lasts this tab only */ }
+  try { sessionStorage.setItem(TOKEN_KEY, token); } catch { /* storage unavailable; the session lasts this tab only */ }
 }
 
 /** Forget the customer session. */
 export function clearCustomerToken(): void {
-  try { localStorage.removeItem(TOKEN_KEY); } catch { /* nothing to clear */ }
+  try { sessionStorage.removeItem(TOKEN_KEY); } catch { /* nothing to clear */ }
 }
 
 /** An error carrying the HTTP status, so callers can branch on 401 or 409. */

@@ -32,7 +32,7 @@ export function openDashboard(port: number, token: string): void {
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
-      sandbox: false,
+      sandbox: true,
       nodeIntegration: false,
       // The dashboard has no other way to know which build is running: the
       // server's own package version is not the released app version (#703).

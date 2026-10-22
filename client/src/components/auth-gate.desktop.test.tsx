@@ -59,7 +59,7 @@ beforeEach(() => {
   root = createRoot(container)
   accepted = new Set()
   statusCalls = []
-  localStorage.setItem(TOKEN_KEY, 'stale-token')
+  sessionStorage.setItem(TOKEN_KEY, 'stale-token')
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input)
     if (!url.endsWith('/api/auth/status')) return json({ error: { message: `unexpected ${url}` } }, 404)
@@ -96,7 +96,7 @@ describe('AuthGate inside the desktop shell', () => {
     await flush()
 
     expect(bridge).toHaveBeenCalledTimes(1)
-    expect(localStorage.getItem(TOKEN_KEY)).toBe(FRESH)
+    expect(sessionStorage.getItem(TOKEN_KEY)).toBe(FRESH)
     expect(statusCalls.at(-1)).toBe(`Bearer ${FRESH}`)
     expect(container.querySelector('[data-testid="app"]')?.textContent).toBe('dashboard')
     expect(passwordField()).toBeNull()

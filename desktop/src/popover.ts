@@ -46,7 +46,7 @@ function createPopover(): BrowserWindow {
     webPreferences: {
       preload: path.join(__dirname, 'preload-popover.cjs'),
       contextIsolation: true,
-      sandbox: false,
+      sandbox: true,
       nodeIntegration: false,
     },
   });

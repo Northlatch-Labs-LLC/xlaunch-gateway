@@ -1,16 +1,20 @@
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 const TOKEN_KEY = 'xlaunch_gateway_dashboard_token';
 
-// Dashboard session token (#35). Stored in localStorage; sent as a Bearer on
-// every /api request and cleared on a 401.
+// Dashboard session token (#35). Stored in sessionStorage (audit S3/B1): a
+// long-lived bearer in localStorage survives browser restarts and is the
+// standard exfiltration target if an injection sink ever lands. sessionStorage
+// keeps the token per-tab for the working session — reloads and links keep
+// the operator signed in — while a closed tab ends the token's reachability.
+// Sent as a Bearer on every /api request and cleared on a 401.
 export function getToken(): string | null {
-  try { return localStorage.getItem(TOKEN_KEY); } catch { return null; }
+  try { return sessionStorage.getItem(TOKEN_KEY); } catch { return null; }
 }
 export function setToken(token: string): void {
-  try { localStorage.setItem(TOKEN_KEY, token); } catch { /* ignore */ }
+  try { sessionStorage.setItem(TOKEN_KEY, token); } catch { /* ignore */ }
 }
 export function clearToken(): void {
-  try { localStorage.removeItem(TOKEN_KEY); } catch { /* ignore */ }
+  try { sessionStorage.removeItem(TOKEN_KEY); } catch { /* ignore */ }
 }
 
 export const UNAUTHORIZED_EVENT = 'xlaunch-gateway:unauthorized';
