@@ -28,7 +28,7 @@
     "@types/node": "^22.0.0",
     "electron": "^41.10.6",
     "electron-builder": "^26.15.3",
-    "esbuild": "^0.24.0",
+    "esbuild": "^0.28.1",
     "typescript": "^5.8.0",
     "vitest": "^3.2.4"
   },
